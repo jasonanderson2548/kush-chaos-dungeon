@@ -3,1824 +3,2125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Aisle Chaos: Dungeon Run</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<title>Kush Chaos Gauntlet</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
 
-  /* ===================== HECKLER PAGE ===================== */
-  #heckler-page {
-    display: none;
-    min-height: 100vh;
-    background: #0a0f0a;
-    font-family: 'Courier New', monospace;
-    color: #fff;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 16px 40px;
-  }
-  #heckler-page.active { display: flex; }
-
-  .heckler-title {
-    font-size: 22px;
-    font-weight: bold;
-    color: #ff7a00;
-    letter-spacing: 2px;
-    margin-bottom: 4px;
-    text-align: center;
-  }
-  .heckler-subtitle {
-    font-size: 11px;
-    color: #ffe066;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
-    text-align: center;
-  }
-  .heckler-status {
-    font-size: 12px;
-    padding: 8px 18px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    transition: all 0.3s;
-  }
-  .heckler-status.connecting { background: #1a1a1a; color: #888; border: 1px solid #333; }
-  .heckler-status.connected  { background: #14532d; color: #4ade80; border: 1px solid #16a34a; }
-  .heckler-status.disconnected { background: #450a0a; color: #f87171; border: 1px solid #ef4444; }
-
-  .heckler-name-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 22px;
-    width: 100%;
-    max-width: 360px;
-  }
-  .heckler-name-row label {
-    font-size: 11px;
-    color: #aaa;
-    white-space: nowrap;
-    letter-spacing: 1px;
-  }
-  .heckler-name-row input {
-    flex: 1;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 8px;
-    color: #fff;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    padding: 8px 12px;
-    outline: none;
-  }
-  .heckler-name-row input:focus { border-color: #ff7a00; }
-
-  .heckler-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    width: 100%;
-    max-width: 360px;
-  }
-  .heckler-btn {
-    border: none;
-    border-radius: 16px;
-    padding: 22px 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    transition: opacity 0.15s, transform 0.1s;
-    position: relative;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .heckler-btn:active { transform: scale(0.95); }
-  .heckler-btn.on-cooldown { opacity: 0.4; cursor: not-allowed; }
-  .heckler-btn .btn-emoji { font-size: 36px; line-height: 1; }
-  .heckler-btn .btn-label { font-size: 11px; letter-spacing: 1px; }
-  .heckler-btn .cooldown-bar {
-    position: absolute;
-    bottom: 0; left: 0;
-    height: 4px;
-    border-radius: 0 0 16px 16px;
-    background: rgba(255,255,255,0.5);
-    width: 0%;
-    transition: width 0.1s linear;
-  }
-
-  .btn-wet   { background: #d97706; color: #fff; }
-  .btn-cart  { background: #4b5563; color: #fff; }
-  .btn-kevin { background: #ea580c; color: #fff; }
-  .btn-restock { background: #16a34a; color: #fff; }
-
-  .heckler-log {
-    margin-top: 22px;
-    width: 100%;
-    max-width: 360px;
-    font-size: 11px;
-    color: #666;
-    text-align: center;
-    min-height: 40px;
-  }
-  .heckler-log .log-entry {
-    color: #ffe066;
-    margin-bottom: 4px;
-    animation: fadeIn 0.3s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* ===================== GAME PAGE ===================== */
-  #game-page { display: none; }
-  #game-page.active { display: block; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: #0a0a0a;
-    font-family: 'Courier New', monospace;
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Share Tech Mono', monospace;
+    color: #e8e8ec;
     overflow: hidden;
+    touch-action: none;
   }
-  #game-container {
+
+  #game-wrapper {
     position: relative;
-    width: 100vmin;
-    height: 100vmin;
-    max-width: 540px;
-    max-height: 540px;
-    margin: 0 auto;
+    width: 540px;
+    height: 540px;
   }
+
   canvas {
     display: block;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
-  #dpad {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    display: grid;
-    grid-template-columns: 44px 44px 44px;
-    grid-template-rows: 44px 44px 44px;
-    gap: 4px;
-    z-index: 100;
+
+  /* HUD overlaid on top */
+  #hud {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: 10;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
   }
-  #dpad button {
+
+  #hud-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.75);
+    padding: 4px 8px;
+    border-bottom: 1px solid rgba(255,165,0,0.3);
+  }
+
+  #hud-left { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
+  #hud-center { text-align: center; color: #ffd700; font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 1px; }
+  #hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 130px; }
+
+  #hp-bar-container { display: flex; align-items: center; gap: 4px; }
+  #hp-bar-bg { width: 80px; height: 8px; background: #333; border: 1px solid #555; border-radius: 2px; overflow: hidden; }
+  #hp-bar-fill { height: 100%; background: #00ff44; transition: width 0.2s, background 0.2s; border-radius: 2px; }
+  #hp-text { color: #aaa; white-space: nowrap; }
+
+  #ammo-display { color: #4af0ff; }
+  #score-display { color: #ffd700; }
+  #room-code { color: #888; font-size: 9px; }
+
+  #kevin-hp-bar {
+    position: absolute;
+    bottom: 0; left: 0; width: 100%;
+    background: rgba(0,0,0,0.8);
+    padding: 4px 8px;
+    border-top: 1px solid rgba(255,100,0,0.5);
+    display: none;
+  }
+  #kevin-hp-inner { display: flex; align-items: center; gap: 6px; }
+  #kevin-bar-bg { flex: 1; height: 10px; background: #333; border: 1px solid #555; border-radius: 2px; overflow: hidden; }
+  #kevin-bar-fill { height: 100%; background: #ff4400; transition: width 0.15s; border-radius: 2px; }
+
+  #warning-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff4444;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 20;
+    display: none;
+    text-shadow: 0 0 10px #ff0000;
+  }
+
+  #room-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff6600;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 30;
+    display: none;
+    text-shadow: 0 0 20px #ff4400, 0 0 40px #ff0000;
+    white-space: nowrap;
+  }
+
+  #heckle-msg {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,100,0,0.8);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    pointer-events: none;
+    z-index: 25;
+    display: none;
+    white-space: nowrap;
+  }
+
+  /* Mobile d-pad */
+  #mobile-controls {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: none;
+    pointer-events: none;
+    z-index: 50;
+    padding: 8px;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  #dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+    gap: 2px;
+    pointer-events: auto;
+  }
+
+  .dpad-btn {
+    width: 44px; height: 44px;
     background: rgba(255,255,255,0.15);
     border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 8px;
+    border-radius: 6px;
     color: #fff;
-    font-size: 20px;
-    cursor: pointer;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  #dpad button:active { background: rgba(255,255,255,0.35); }
-  #dpad .empty { visibility: hidden; }
-  #throw-btn {
-    position: fixed;
-    bottom: 40px;
-    right: 24px;
-    width: 70px;
-    height: 70px;
-    background: rgba(255, 122, 0, 0.85);
-    border: 3px solid #ff7a00;
-    border-radius: 50%;
-    color: #fff;
-    font-size: 13px;
-    font-weight: bold;
-    font-family: 'Courier New', monospace;
-    cursor: pointer;
-    z-index: 100;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    letter-spacing: 0.5px;
-  }
-  #throw-btn:active { background: rgba(255,160,0,0.95); }
-  #hud {
-    position: fixed;
-    top: 0; left: 0; right: 0;
+    font-size: 18px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 6px 14px;
-    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .dpad-btn:active { background: rgba(255,255,255,0.35); }
+  .dpad-empty { visibility: hidden; }
+
+  #throw-btn {
+    width: 72px; height: 72px;
+    background: rgba(255,150,0,0.4);
+    border: 3px solid rgba(255,150,0,0.7);
+    border-radius: 50%;
+    color: #ffd700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    pointer-events: auto;
+    margin-bottom: 8px;
+    margin-right: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    flex-direction: column;
+    gap: 0;
+  }
+  #throw-btn span { font-size: 10px; color: #ffcc00; }
+
+  /* Responsive scaling */
+  @media (max-width: 560px) {
+    #game-wrapper {
+      width: 100vw;
+      height: 100vw;
+    }
+    canvas { width: 100% !important; height: 100% !important; }
+    #mobile-controls { display: flex; }
+  }
+  @media (max-height: 600px) and (orientation: landscape) {
+    #game-wrapper { width: 540px; height: 540px; }
+  }
+
+  /* Heckler page */
+  #heckler-page {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+  }
+  #heckler-page h1 {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff6600;
+    font-size: 20px;
+    text-align: center;
+  }
+  .heckle-btn {
+    width: 100%;
+    padding: 16px;
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    border: 2px solid currentColor;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.5);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .heckle-btn .cooldown-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 4px;
+    background: currentColor;
+    transition: width 0.1s linear;
+    width: 0%;
+    opacity: 0.5;
+  }
+  .heckle-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #heckler-status { color: #888; font-size: 12px; }
+  #heckler-name-input {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #555;
     color: #fff;
-    font-size: 13px;
-    font-family: 'Courier New', monospace;
-    z-index: 100;
-  }
-  #hud span { color: #ff7a00; font-weight: bold; }
-  #room-code-hud {
-    position: fixed;
-    top: 32px;
-    left: 6px;
-    font-size: 9px;
-    font-family: 'Courier New', monospace;
-    color: rgba(255,255,255,0.45);
-    z-index: 100;
-    letter-spacing: 1px;
-    pointer-events: none;
-  }
-  #hecklers-count {
-    position: fixed;
-    top: 32px;
-    right: 6px;
-    font-size: 9px;
-    font-family: 'Courier New', monospace;
-    color: rgba(255,220,100,0.6);
-    z-index: 100;
-    letter-spacing: 1px;
-    pointer-events: none;
+    padding: 8px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    border-radius: 4px;
+    width: 100%;
   }
 </style>
 </head>
 <body>
 
-<!-- ============================================================ -->
-<!-- HECKLER JOIN PAGE — shown when ?join=CODE is in URL         -->
-<!-- ============================================================ -->
-<div id="heckler-page">
-  <div class="heckler-title">🛒 HECKLE THE RUNNER</div>
-  <div class="heckler-subtitle">KUSH CHAOS DUNGEON — THROW CHAOS</div>
-
-  <div id="heckler-status" class="heckler-status connecting">⏳ CONNECTING...</div>
-
-  <div class="heckler-name-row">
-    <label>YOUR NAME:</label>
-    <input type="text" id="heckler-name" placeholder="Heckler" maxlength="16" value="Heckler">
-  </div>
-
-  <div class="heckler-buttons">
-    <button class="heckler-btn btn-wet"    data-type="wet_floor" onclick="sendHeckle(this)">
-      <span class="btn-emoji">⚠️</span>
-      <span class="btn-label">WET FLOOR</span>
-      <div class="cooldown-bar" id="cd-wet_floor"></div>
-    </button>
-    <button class="heckler-btn btn-cart"   data-type="cart" onclick="sendHeckle(this)">
-      <span class="btn-emoji">🛒</span>
-      <span class="btn-label">SHOPPING CART</span>
-      <div class="cooldown-bar" id="cd-cart"></div>
-    </button>
-    <button class="heckler-btn btn-kevin"  data-type="mini_kevin" onclick="sendHeckle(this)">
-      <span class="btn-emoji">👺</span>
-      <span class="btn-label">MINI KEVIN</span>
-      <div class="cooldown-bar" id="cd-mini_kevin"></div>
-    </button>
-    <button class="heckler-btn btn-restock" data-type="restock" onclick="sendHeckle(this)">
-      <span class="btn-emoji">📦</span>
-      <span class="btn-label">RESTOCK</span>
-      <div class="cooldown-bar" id="cd-restock"></div>
-    </button>
-  </div>
-
-  <div class="heckler-log" id="heckler-log">
-    <div style="color:#555;font-size:11px;">Waiting for connection...</div>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- GAME PAGE                                                    -->
-<!-- ============================================================ -->
+<!-- GAME PAGE -->
 <div id="game-page">
-  <div id="hud">
-    <div>❤️ <span id="hp-display">3</span></div>
-    <div style="color:#ffe066;font-weight:bold;letter-spacing:1px;">AISLE CHAOS</div>
-    <div>🎯 <span id="item-display">—</span></div>
-  </div>
-  <div id="room-code-hud"></div>
-  <div id="hecklers-count"></div>
+  <div id="game-wrapper">
+    <canvas id="gameCanvas" width="540" height="540"></canvas>
 
-  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
-    <div id="game-container">
-      <canvas id="gameCanvas"></canvas>
+    <!-- HUD -->
+    <div id="hud">
+      <div id="hud-top">
+        <div id="hud-left">
+          <div id="hp-bar-container">
+            <div id="hp-bar-bg"><div id="hp-bar-fill" style="width:100%"></div></div>
+            <div id="hp-text">12/12</div>
+          </div>
+          <div id="room-code">ROOM: ----</div>
+        </div>
+        <div id="hud-center">KUSH CHAOS GAUNTLET</div>
+        <div id="hud-right">
+          <div id="ammo-display">⚡ AMMO: 10</div>
+          <div id="score-display">★ SCORE: 0</div>
+        </div>
+      </div>
+
+      <div id="kevin-hp-bar">
+        <div id="kevin-hp-inner">
+          <span style="color:#ff4400;font-size:10px;white-space:nowrap;">KEVIN</span>
+          <div id="kevin-bar-bg"><div id="kevin-bar-fill" style="width:100%"></div></div>
+          <span id="kevin-hp-text" style="font-size:10px;color:#ff6600;">8/8</span>
+        </div>
+      </div>
     </div>
+
+    <div id="warning-text">⚠ NEEDS FOOD BADLY ⚠</div>
+    <div id="room-label">ENTERING KEVIN'S LAIR</div>
+    <div id="heckle-msg"></div>
   </div>
 
-  <!-- D-pad -->
-  <div id="dpad">
-    <div class="empty"></div>
-    <button id="btn-up">▲</button>
-    <div class="empty"></div>
-    <button id="btn-left">◀</button>
-    <div class="empty"></div>
-    <button id="btn-right">▶</button>
-    <div class="empty"></div>
-    <button id="btn-down">▼</button>
-    <div class="empty"></div>
+  <!-- Mobile controls -->
+  <div id="mobile-controls">
+    <div id="dpad">
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" id="btn-up">▲</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" id="btn-left">◀</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" id="btn-right">▶</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" id="btn-down">▼</div>
+      <div class="dpad-empty"></div>
+    </div>
+    <div id="throw-btn">🌿<span>THROW</span></div>
   </div>
-
-  <button id="throw-btn">THROW</button>
 </div>
 
+<!-- HECKLER PAGE -->
+<div id="heckler-page">
+  <h1>💨 KUSH CHAOS<br>HECKLER CONTROL</h1>
+  <div id="heckler-status">Connecting...</div>
+  <input id="heckler-name-input" type="text" placeholder="Your heckler name..." maxlength="16" value="Anonymous">
+  <button class="heckle-btn" id="btn-wet-floor" style="color:#4af0ff" data-cooldown="8000">
+    ⚠️ WET FLOOR<br><small style="font-size:11px;opacity:0.7">Stuns player 1s</small>
+    <div class="cooldown-bar" id="cd-wet-floor"></div>
+  </button>
+  <button class="heckle-btn" id="btn-cart" style="color:#ffd700" data-cooldown="8000">
+    🛒 SHOPPING CART<br><small style="font-size:11px;opacity:0.7">Slides cart at player</small>
+    <div class="cooldown-bar" id="cd-cart"></div>
+  </button>
+  <button class="heckle-btn" id="btn-mini-kevin" style="color:#ff6600" data-cooldown="8000">
+    👺 MINI KEVIN<br><small style="font-size:11px;opacity:0.7">Spawns fast Kevin clone</small>
+    <div class="cooldown-bar" id="cd-mini-kevin"></div>
+  </button>
+  <button class="heckle-btn" id="btn-restock" style="color:#00ff88" data-cooldown="8000">
+    📦 RESTOCK<br><small style="font-size:11px;opacity:0.7">Respawns all pickups</small>
+    <div class="cooldown-bar" id="cd-restock"></div>
+  </button>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
-// ============================================================
-// PAGE ROUTING — heckler vs game
-// ============================================================
-const urlParams = new URLSearchParams(window.location.search);
-const joinCode = urlParams.get('join');
-
-if (joinCode) {
-  // Show heckler page
-  document.getElementById('heckler-page').classList.add('active');
-  initHecklerPage(joinCode.toUpperCase());
-} else {
-  // Show game page
-  document.getElementById('game-page').classList.add('active');
-  initGamePage();
-}
+'use strict';
 
 // ============================================================
-// HECKLER PAGE LOGIC
+// CONSTANTS & CONFIGURATION
 // ============================================================
-function initHecklerPage(code) {
-  document.title = 'Heckle the Runner — Kush Chaos';
-  const COOLDOWN_MS = 8000;
-  const cooldowns = {};
-  const cooldownIntervals = {};
-  let hostConn = null;
-  let hecklerPeer = null;
+const TILE = 27;
+const COLS = 20;
+const ROWS = 20;
+const W = TILE * COLS; // 540
+const H = TILE * ROWS; // 540
 
-  const statusEl = document.getElementById('heckler-status');
-  const logEl = document.getElementById('heckler-log');
+const PLAYER_SPEED = 2.5;
+const PLAYER_MAX_HP = 12;
+const PLAYER_START_HP = 12;
+const PLAYER_START_AMMO = 10;
+const PROJECTILE_SPEED = 7;
+const HP_DRAIN_INTERVAL = 450; // frames
+const SPAWN_INTERVAL = 150;    // frames
+const MAX_ENEMIES = 25;
+const DAMAGE_COOLDOWN = 90;    // frames
 
-  function setStatus(state, text) {
-    statusEl.className = 'heckler-status ' + state;
-    statusEl.textContent = text;
-  }
-
-  function addLog(text) {
-    const el = document.createElement('div');
-    el.className = 'log-entry';
-    el.textContent = text;
-    logEl.innerHTML = '';
-    logEl.appendChild(el);
-  }
-
-  function connectToHost() {
-    setStatus('connecting', '⏳ CONNECTING...');
-    hecklerPeer = new Peer(undefined, { debug: 1 });
-
-    hecklerPeer.on('open', () => {
-      hostConn = hecklerPeer.connect('kc-dungeon-' + code, { reliable: true });
-
-      hostConn.on('open', () => {
-        setStatus('connected', '✓ CONNECTED — HECKLE AWAY!');
-        addLog('Ready to throw chaos at the runner!');
-      });
-
-      hostConn.on('close', () => {
-        setStatus('disconnected', '✗ DISCONNECTED');
-        addLog('Lost connection to the game.');
-        // Retry after 3s
-        setTimeout(connectToHost, 3000);
-      });
-
-      hostConn.on('error', () => {
-        setStatus('disconnected', '✗ ERROR — RETRYING...');
-        setTimeout(connectToHost, 3000);
-      });
-    });
-
-    hecklerPeer.on('error', () => {
-      setStatus('disconnected', '✗ PEER ERROR — RETRYING...');
-      try { hecklerPeer.destroy(); } catch(e) {}
-      setTimeout(connectToHost, 3000);
-    });
-  }
-
-  connectToHost();
-
-  window.sendHeckle = function(btn) {
-    const type = btn.getAttribute('data-type');
-    if (cooldowns[type]) return;
-    if (!hostConn || !hostConn.open) {
-      addLog('Not connected yet!');
-      return;
-    }
-
-    const name = document.getElementById('heckler-name').value.trim() || 'Heckler';
-    hostConn.send(JSON.stringify({ type, name }));
-
-    const labels = {
-      wet_floor: '⚠️ Wet Floor thrown!',
-      cart: '🛒 Shopping Cart launched!',
-      mini_kevin: '👺 Mini Kevin unleashed!',
-      restock: '📦 Restocked the store!'
-    };
-    addLog(labels[type] || 'Obstacle thrown!');
-
-    // Start cooldown
-    cooldowns[type] = true;
-    btn.classList.add('on-cooldown');
-    const bar = document.getElementById('cd-' + type);
-    const startTime = Date.now();
-
-    if (cooldownIntervals[type]) clearInterval(cooldownIntervals[type]);
-    cooldownIntervals[type] = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, (elapsed / COOLDOWN_MS) * 100);
-      bar.style.width = pct + '%';
-      if (elapsed >= COOLDOWN_MS) {
-        clearInterval(cooldownIntervals[type]);
-        cooldowns[type] = false;
-        btn.classList.remove('on-cooldown');
-        bar.style.width = '0%';
-      }
-    }, 80);
-  };
-}
+// Room code charset
+const CHARSET = 'ABCDEFGHJKLMNPQRTVWXYZ2345679';
 
 // ============================================================
-// GAME PAGE LOGIC
+// MAP DATA (20×20 grid)
 // ============================================================
-function initGamePage() {
-
-// ============================================================
-// AISLE CHAOS: DUNGEON RUN
-// Top-down 8-bit grocery dungeon crawler
-// ============================================================
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-// Responsive sizing
-function resize() {
-  const container = document.getElementById('game-container');
-  const size = Math.min(window.innerWidth, window.innerHeight, 540);
-  canvas.width = 540;
-  canvas.height = 540;
-  canvas.style.width = size + 'px';
-  canvas.style.height = size + 'px';
-  container.style.width = size + 'px';
-  container.style.height = size + 'px';
-}
-resize();
-window.addEventListener('resize', resize);
-
-// ============================================================
-// TILE MAP
-// ============================================================
-const TILE = 30;
-const COLS = 18;
-const ROWS = 18;
-
-const ZONE_COLORS = [
-  { rows: [0,3],   floor: '#1a2a1a', label: 'PRODUCE',    color: '#4CAF50' },
-  { rows: [3,7],   floor: '#2a1a1a', label: 'DELI',       color: '#D4A017' },
-  { rows: [7,11],  floor: '#1a1a2a', label: 'FREEZER',    color: '#4fc3f7' },
-  { rows: [11,15], floor: '#2a1a10', label: 'DRY GOODS',  color: '#8B6914' },
-  { rows: [15,18], floor: '#1a1020', label: 'BACK ROOM',  color: '#7c3aed' },
-];
-
-function getZoneFloor(row) {
-  for (const z of ZONE_COLORS) {
-    if (row >= z.rows[0] && row < z.rows[1]) return z;
-  }
-  return { floor: '#111', color: '#555', label: '' };
-}
-
+// 0=floor, 1=wall, S=spawner, F=food, 2=ammo pickup
 const RAW_MAP = [
-  "111111111111111111",  // 0  outer wall
-  "1E0000000000000001",  // 1  entrance — wide open
-  "100000000000000001",  // 2  produce zone (color only, no shelf wall)
-  "100011110011110001",  // 3  shelf row: 4-wide islands, 3-wide aisles between
-  "100000000000000001",  // 4  open deli aisle
-  "100000000000000001",  // 5  open
-  "100011110011110001",  // 6  shelf row: same pattern
-  "100000000000000001",  // 7  open freezer aisle
-  "100000000000000001",  // 8  open
-  "100011110011110001",  // 9  shelf row: same pattern
-  "100000000000000001",  // 10 open dry goods
-  "100000000000000001",  // 11 open — approaching boss
-  "111110000000011111",  // 12 boss barrier — huge gap cols 5-12
-  "10000K000000K00001",  // 13 Kevin boss room
-  "100000000000000001",  // 14 Kevin room open
-  "100000000T000000 1",  // 15 treasure (accessible after Kevin dies)
-  "100000000000000001",  // 16 open
-  "111111111111111111",  // 17 bottom wall
+  '11111111111111111111', // row 0
+  '1S00000000000000000S', // row 1 - note: last char must be '1'... let me fix
+  '10000000000000000001', // row 2
+  '10011100000011100001', // row 3
+  '10011100000011100001', // row 4
+  '10000000000000000001', // row 5
+  '10000001111000000001', // row 6
+  '10011100000011100001', // row 7
+  '1S00000000000000000S', // row 8
+  '11111110000001111111', // row 9 - dividing wall, gap cols 7-12
+  '11111110000001111111', // row 10
+  '1S00000000000000000S', // row 11
+  '10000001111000000001', // row 12
+  '10011100000011100001', // row 13
+  '10000000000000000001', // row 14
+  '10011100000011100001', // row 15
+  '10000001111000000001', // row 16
+  '10000000000000000001', // row 17
+  '1S00000000000000000S', // row 18
+  '11111111111111111111', // row 19
 ];
 
-(function fixMapPositions() {
-  function setChar(rowStr, col, ch) {
-    return rowStr.slice(0, col) + ch + rowStr.slice(col + 1);
-  }
-  // Health packs on open floor tiles
-  RAW_MAP[4]  = setChar(RAW_MAP[4],  9,  'H');
-  RAW_MAP[8]  = setChar(RAW_MAP[8],  9,  'H');
-  RAW_MAP[11] = setChar(RAW_MAP[11], 9,  'H');
-  // Speed boosts
-  RAW_MAP[5]  = setChar(RAW_MAP[5],  14, 'B');
-  RAW_MAP[10] = setChar(RAW_MAP[10], 3,  'B');
-  // Pickups on open floor
-  RAW_MAP[2]  = setChar(RAW_MAP[2],  3,  '2');
-  RAW_MAP[2]  = setChar(RAW_MAP[2],  9,  '2');
-  RAW_MAP[2]  = setChar(RAW_MAP[2],  14, '2');
-  RAW_MAP[4]  = setChar(RAW_MAP[4],  3,  '2');
-  RAW_MAP[7]  = setChar(RAW_MAP[7],  3,  '2');
-  RAW_MAP[7]  = setChar(RAW_MAP[7],  9,  '2');
-  RAW_MAP[10] = setChar(RAW_MAP[10], 14, '2');
-  // Enemies on open floor rows
-  RAW_MAP[5]  = setChar(RAW_MAP[5],  6,  '3');
-  RAW_MAP[8]  = setChar(RAW_MAP[8],  12, '3');
-  RAW_MAP[11] = setChar(RAW_MAP[11], 6,  '3');
-})();
-
-function parseMap(raw) {
-  const map = [];
-  for (let r = 0; r < raw.length; r++) {
+// Parse map into 2D array: each cell is a char
+// We'll store tile types: 0=floor, 1=wall, 2=ammo, F=food, S=spawner, P=portal, X=exit
+function buildMapGrid() {
+  const grid = [];
+  for (let r = 0; r < ROWS; r++) {
     const row = [];
-    for (let c = 0; c < raw[r].length; c++) row.push(raw[r][c]);
-    map.push(row);
+    const line = RAW_MAP[r];
+    for (let c = 0; c < COLS; c++) {
+      const ch = line[c] || '1';
+      if (ch === '1') row.push(1);
+      else if (ch === 'S') row.push('S');
+      else row.push(0);
+    }
+    // Ensure col 0 and col 19 are walls on all rows (outer boundary)
+    row[0] = 1;
+    row[19] = 1;
+    grid.push(row);
   }
-  return map;
-}
-const MAP = parseMap(RAW_MAP);
-
-// ============================================================
-// PROMO CARD DEFINITIONS
-// ============================================================
-const PROMO_CARDS = [
-  {
-    name: 'CLEARANCE BIN SPECIAL', rarity: 'PROMO', rarityLabel: 'PROMO',
-    headerColor: '#6b7280', headerText: '#fff', emoji: '🏷️📦',
-    flavor: '"70% off. Still worth playing."',
-    rules: ['Worth 1 point.', 'Shuffle back into deck when played.'],
-    border: '#9ca3af',
-  },
-  {
-    name: 'FLOOR SAMPLE', rarity: 'COMMON PROMO', rarityLabel: 'COMMON PROMO',
-    headerColor: '#2563eb', headerText: '#fff', emoji: '🛒✨',
-    flavor: '"Someone left it. You found it. No questions."',
-    rules: ['Worth 2 points. Play anytime.', 'Discard 1 Chaos card from your hand.'],
-    border: '#3b82f6',
-  },
-  {
-    name: 'BACK ROOM FIND', rarity: 'UNCOMMON', rarityLabel: 'UNCOMMON',
-    headerColor: '#16a34a', headerText: '#fff', emoji: '📦🌿',
-    flavor: '"Found between rows 12 & 13. Kevin never knew."',
-    rules: ['Double your next Stock card value.', 'Draw 2 cards.', 'Cannot be countered.'],
-    border: '#22c55e',
-  },
-  {
-    name: "KEVIN'S STASH", rarity: 'RARE', rarityLabel: 'RARE',
-    headerColor: '#ea580c', headerText: '#fff', emoji: '😤💰',
-    flavor: '"Kevin had a side hustle. We don\'t talk about it."',
-    rules: ["Play on Kevin's turn.", 'Gain 3 Stock cards from the void.', 'Kevin misses next turn.'],
-    border: '#f97316',
-  },
-  {
-    name: 'THE PHANTOM STASH', rarity: 'ULTRA RARE', rarityLabel: 'ULTRA RARE · 1 OF 1',
-    headerColor: '#b45309', headerText: '#ffe066', emoji: '👻🌿',
-    flavor: '"Never logged. Never taxed. Never existed."',
-    rules: ['Play for free.', 'Steal 1 Stock card from each opponent.', 'Cannot be blocked.'],
-    border: '#f59e0b',
-  },
-];
-
-function getEarnedCardIndex() {
-  if (player.hp >= 3) return 4;
-  if (player.score >= 60) return 3;
-  if (player.score >= 30) return 2;
-  if (player.score >= 10) return 1;
-  return 0;
+  return grid;
 }
 
 // ============================================================
-// PEERJS — HOST SIDE
+// ROOM CODE GENERATION (PeerJS)
 // ============================================================
-const ROOM_CHARSET = 'ABCDEFGHJKLMNPQRTVWXYZ2345679';
-function genRoomCode(len = 4) {
+function genRoomCode() {
   let code = '';
-  for (let i = 0; i < len; i++) code += ROOM_CHARSET[Math.floor(Math.random() * ROOM_CHARSET.length)];
+  for (let i = 0; i < 4; i++) code += CHARSET[Math.floor(Math.random() * CHARSET.length)];
   return code;
 }
 
-const ROOM_CODE = genRoomCode();
-const PEER_ID = 'kc-dungeon-' + ROOM_CODE;
-let hostPeer = null;
-let hecklerConnections = []; // array of active DataConnections
-let hecklerCount = 0;
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function randRange(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
 
-function initPeer() {
-  hostPeer = new Peer(PEER_ID, { debug: 1 });
-
-  hostPeer.on('open', (id) => {
-    console.log('[Peer] Host open:', id);
-    updateRoomCodeUI();
-  });
-
-  hostPeer.on('connection', (conn) => {
-    conn.on('open', () => {
-      hecklerConnections.push(conn);
-      hecklerCount++;
-      updateRoomCodeUI();
-      showMessage('👥 Heckler joined the game!');
-    });
-
-    conn.on('data', (rawData) => {
-      try {
-        const msg = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-        handleHeckleMessage(msg);
-      } catch(e) {
-        console.warn('[Peer] Bad message', rawData);
-      }
-    });
-
-    conn.on('close', () => {
-      hecklerConnections = hecklerConnections.filter(c => c !== conn);
-      hecklerCount = Math.max(0, hecklerCount - 1);
-      updateRoomCodeUI();
-    });
-  });
-
-  hostPeer.on('error', (err) => {
-    console.warn('[Peer] Host error:', err.type);
-    // If ID taken (from previous session), gen a new one — but we use a fixed ID per page load so just log
-  });
+// Tile solid check
+function isSolid(grid, col, row) {
+  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return true;
+  const c = grid[row][col];
+  return c === 1 || c === 'S';
 }
 
-function updateRoomCodeUI() {
-  const joinURL = window.location.href.split('?')[0] + '?join=' + ROOM_CODE;
-  const codeEl = document.getElementById('room-code-hud');
-  if (codeEl) codeEl.textContent = 'ROOM: ' + ROOM_CODE;
-  const countEl = document.getElementById('hecklers-count');
-  if (countEl) countEl.textContent = hecklerCount > 0 ? '👥 ' + hecklerCount : '';
+// World-coordinate solid check (circle at cx,cy with radius r)
+function solidCheck(grid, cx, cy, r) {
+  // Check 4 corners + center
+  const pts = [
+    [cx - r, cy - r], [cx + r, cy - r],
+    [cx - r, cy + r], [cx + r, cy + r],
+    [cx, cy]
+  ];
+  for (const [x, y] of pts) {
+    const col = Math.floor(x / TILE);
+    const row = Math.floor(y / TILE);
+    if (isSolid(grid, col, row)) return true;
+  }
+  return false;
 }
 
-// ============================================================
-// OBSTACLE TYPES — heckler-triggered
-// ============================================================
-let wetFloorTiles = [];  // { x, y, life }
-let cartObstacles = [];  // { x, y, vx, w, h, life }
-
-function handleHeckleMessage(msg) {
-  if (gameState !== GAME_STATES.PLAYING) return;
-  const name = (msg.name || 'Heckler').slice(0, 16);
-
-  switch (msg.type) {
-    case 'wet_floor':
-      spawnWetFloor(name);
-      break;
-    case 'cart':
-      spawnCart(name);
-      break;
-    case 'mini_kevin':
-      spawnMiniKevin(name);
-      break;
-    case 'restock':
-      doRestock(name);
-      break;
+// Move entity with wall sliding
+function moveWithCollision(grid, entity, dx, dy, radius) {
+  // Try X
+  const nx = entity.x + dx;
+  if (!solidCheck(grid, nx, entity.y, radius)) {
+    entity.x = nx;
+  }
+  // Try Y
+  const ny = entity.y + dy;
+  if (!solidCheck(grid, entity.x, ny, radius)) {
+    entity.y = ny;
   }
 }
 
-function spawnWetFloor(name) {
-  // Pick a random open floor tile near player
-  const camX = Math.max(0, Math.min(player.x - canvas.width/2,  COLS*TILE - canvas.width));
-  const camY = Math.max(0, Math.min(player.y - canvas.height/2, ROWS*TILE - canvas.height));
-  const candidates = [];
-  for (let r = 1; r < ROWS - 1; r++) {
-    for (let c = 1; c < COLS - 1; c++) {
-      const ch = MAP[r][c];
-      if (ch !== '1' && ch !== 'T') {
-        const wx = c * TILE + TILE/2, wy = r * TILE + TILE/2;
-        // Must be on screen
-        if (wx >= camX && wx <= camX + canvas.width && wy >= camY && wy <= camY + canvas.height) {
-          candidates.push({ x: wx, y: wy });
-        }
-      }
+// ============================================================
+// PARTICLE SYSTEM
+// ============================================================
+class Particle {
+  constructor(x, y, vx, vy, life, color, size, gravity = 200) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.life = life; this.maxLife = life;
+    this.color = color; this.size = size;
+    this.gravity = gravity;
+    this.active = true;
+  }
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vy += this.gravity * dt;
+    this.life -= dt;
+    if (this.life <= 0) this.active = false;
+  }
+  draw(ctx) {
+    const alpha = clamp(this.life / this.maxLife, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.color;
+    const s = this.size * alpha;
+    ctx.fillRect(this.x - s/2, this.y - s/2, s, s);
+    ctx.restore();
+  }
+}
+
+class ParticleSystem {
+  constructor() { this.particles = []; }
+  emit(x, y, count, cfg) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = randRange(cfg.minSpeed || 30, cfg.maxSpeed || 120);
+      this.particles.push(new Particle(
+        x, y,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed,
+        randRange(cfg.minLife || 0.3, cfg.maxLife || 0.8),
+        cfg.color || '#ff8800',
+        randRange(cfg.minSize || 3, cfg.maxSize || 7),
+        cfg.gravity !== undefined ? cfg.gravity : 200
+      ));
     }
   }
-  if (candidates.length === 0) return;
-  const spot = candidates[Math.floor(Math.random() * candidates.length)];
-  wetFloorTiles.push({ x: spot.x, y: spot.y, life: 600 }); // lasts 10 seconds
-  showMessage(name + ' threw a wet floor!');
-}
-
-function spawnCart(name) {
-  // Slides horizontally at player's Y, entering from the left or right edge
-  const fromLeft = Math.random() < 0.5;
-  const startX = fromLeft ? -30 : canvas.width + COLS*TILE;
-  // Use player row, clamped to a valid row
-  const row = Math.max(1, Math.min(ROWS - 2, Math.floor(player.y / TILE)));
-  const cartY = row * TILE + TILE / 2;
-  const speed = fromLeft ? 4 : -4;
-  cartObstacles.push({
-    x: player.x + (fromLeft ? -canvas.width/2 - 30 : canvas.width/2 + 30),
-    y: cartY,
-    vx: speed,
-    w: 36, h: 24,
-    life: 300,
-    hit: false,
-  });
-  showMessage(name + ' threw a shopping cart!');
-}
-
-function spawnMiniKevin(name) {
-  // Spawn at a random edge of the visible screen
-  const camX = Math.max(0, Math.min(player.x - canvas.width/2,  COLS*TILE - canvas.width));
-  const camY = Math.max(0, Math.min(player.y - canvas.height/2, ROWS*TILE - canvas.height));
-  const edge = Math.floor(Math.random() * 4);
-  let ex, ey;
-  if (edge === 0) { ex = camX + Math.random() * canvas.width; ey = camY + 5; }
-  else if (edge === 1) { ex = camX + Math.random() * canvas.width; ey = camY + canvas.height - 5; }
-  else if (edge === 2) { ex = camX + 5; ey = camY + Math.random() * canvas.height; }
-  else { ex = camX + canvas.width - 5; ey = camY + Math.random() * canvas.height; }
-
-  const miniKevinDef = {
-    color: '#ff7a00',
-    size: 14,
-    speed: 1.8,
-    hp: 1,
-    name: 'MINI KEVIN',
-    patrol: false,
-    damage: 1,
-    isMiniKevin: true,
-  };
-  enemies.push({
-    x: ex, y: ey,
-    startX: ex, startY: ey,
-    vx: 0, vy: 0,
-    hp: 1, maxHp: 1,
-    def: miniKevinDef,
-    invincible: 0,
-    dead: false,
-    animFrame: 0,
-    animTimer: 0,
-    isMiniKevin: true,
-  });
-  showMessage(name + ' unleashed a Mini Kevin!');
-}
-
-function doRestock(name) {
-  // Respawn all collected pickups
-  for (const p of pickups) {
-    p.collected = false;
+  update(dt) {
+    this.particles = this.particles.filter(p => { p.update(dt); return p.active; });
   }
-  showMessage(name + ' restocked the store! 📦');
+  draw(ctx) {
+    for (const p of this.particles) p.draw(ctx);
+  }
+}
+
+// ============================================================
+// SPAWNER CLASS
+// ============================================================
+class Spawner {
+  constructor(col, row, roomB) {
+    this.col = col; this.row = row;
+    this.x = col * TILE + TILE / 2;
+    this.y = row * TILE + TILE / 2;
+    this.hp = 3;
+    this.roomB = roomB; // spawns ghosts if true
+    this.timer = Math.floor(Math.random() * SPAWN_INTERVAL); // stagger
+    this.flashTimer = 0;
+    this.alive = true;
+    this.pulseT = Math.random() * Math.PI * 2;
+  }
+  update() {
+    this.pulseT += 0.08;
+    if (this.flashTimer > 0) this.flashTimer--;
+  }
+  hit() {
+    this.hp--;
+    this.flashTimer = 10;
+    return this.hp <= 0;
+  }
+  draw(ctx, frame) {
+    if (!this.alive) return;
+    const x = this.col * TILE;
+    const y = this.row * TILE;
+    const pulse = 0.5 + 0.5 * Math.sin(this.pulseT);
+
+    // Base wall tile
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(x, y, TILE, TILE);
+
+    // Glow
+    const glowColor = this.flashTimer > 0 ? `rgba(255,0,0,${0.5+0.5*pulse})` : `rgba(255,120,0,${0.3+0.4*pulse})`;
+    ctx.fillStyle = glowColor;
+    ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+
+    // Vent pattern (pixel art grid)
+    ctx.fillStyle = '#1a0a00';
+    for (let vy = 0; vy < 3; vy++) {
+      for (let vx = 0; vx < 3; vx++) {
+        ctx.fillRect(x + 5 + vx * 6, y + 7 + vy * 5, 4, 3);
+      }
+    }
+
+    // Flash overlay
+    if (this.flashTimer > 0) {
+      ctx.fillStyle = `rgba(255,50,50,${this.flashTimer / 10 * 0.7})`;
+      ctx.fillRect(x, y, TILE, TILE);
+    }
+
+    // HP dots
+    for (let d = 0; d < this.hp; d++) {
+      ctx.fillStyle = '#ff8800';
+      ctx.beginPath();
+      ctx.arc(x + 7 + d * 7, y + 3, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// ============================================================
+// ENEMY CLASS
+// ============================================================
+class Enemy {
+  constructor(x, y, type) {
+    this.x = x; this.y = y;
+    this.type = type;
+    this.vx = 0; this.vy = 0;
+    this.alive = true;
+    this.flashTimer = 0;
+    this.pulseT = Math.random() * Math.PI * 2;
+
+    switch(type) {
+      case 'chaos':
+        this.hp = 1; this.maxHp = 1; this.speed = 0.8;
+        this.size = 16; this.color = '#ff3333'; this.points = 10;
+        this.radius = 8; break;
+      case 'inspector':
+        this.hp = 1; this.maxHp = 1; this.speed = 1.3;
+        this.size = 16; this.color = '#aa44ff'; this.points = 15;
+        this.radius = 8; break;
+      case 'ghost':
+        this.hp = 2; this.maxHp = 2; this.speed = 0.9;
+        this.size = 18; this.color = '#ff8800'; this.points = 25;
+        this.radius = 9; this.ghost = true; break;
+      case 'boss':
+        this.hp = 8; this.maxHp = 8; this.speed = 0.6;
+        this.size = 30; this.color = '#ff6600'; this.points = 100;
+        this.radius = 15; this.isBoss = true; break;
+      case 'mini_kevin':
+        this.hp = 1; this.maxHp = 1; this.speed = 2.2;
+        this.size = 12; this.color = '#ff9900'; this.points = 20;
+        this.radius = 6; break;
+      default:
+        this.hp = 1; this.maxHp = 1; this.speed = 1.0;
+        this.size = 14; this.color = '#888'; this.points = 5;
+        this.radius = 7;
+    }
+  }
+
+  update(grid, player, frame) {
+    if (!this.alive) return;
+    this.pulseT += 0.05;
+    if (this.flashTimer > 0) this.flashTimer--;
+
+    // Boss gets faster below 4 HP
+    let spd = this.speed;
+    if (this.isBoss && this.hp < 4) spd *= 1.6;
+
+    // Chase player
+    const dx = player.x - this.x;
+    const dy = player.y - this.y;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d > 0) {
+      this.vx = (dx / d) * spd;
+      this.vy = (dy / d) * spd;
+    }
+
+    if (this.ghost) {
+      // Ghosts pass through walls
+      this.x += this.vx;
+      this.y += this.vy;
+    } else {
+      moveWithCollision(grid, this, this.vx, this.vy, this.radius);
+    }
+  }
+
+  hit(dmg) {
+    this.hp -= dmg;
+    this.flashTimer = 8;
+    if (this.hp <= 0) { this.alive = false; return true; }
+    return false;
+  }
+
+  draw(ctx) {
+    if (!this.alive) return;
+    const x = this.x;
+    const y = this.y;
+    const s = this.size;
+    const hs = s / 2;
+
+    ctx.save();
+
+    if (this.ghost) {
+      ctx.globalAlpha = 0.65 + 0.1 * Math.sin(this.pulseT);
+    }
+
+    // Flash
+    if (this.flashTimer > 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x - hs - 2, y - hs - 2, s + 4, s + 4);
+    }
+
+    // Body
+    ctx.fillStyle = this.color;
+    if (this.ghost) {
+      // Rounded ghost shape
+      ctx.beginPath();
+      ctx.arc(x, y - hs * 0.3, hs * 0.9, Math.PI, 0);
+      ctx.lineTo(x + hs * 0.9, y + hs * 0.6);
+      // Wavy bottom
+      for (let w = 3; w >= 0; w--) {
+        const wx = x - hs * 0.9 + (w / 3) * hs * 1.8;
+        const wy = y + hs * 0.5 + (w % 2 === 0 ? hs * 0.25 : -hs * 0.1);
+        ctx.lineTo(wx, wy);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else if (this.isBoss) {
+      // Boss: large rounded rect
+      ctx.beginPath();
+      ctx.roundRect(x - hs, y - hs, s, s, 5);
+      ctx.fill();
+      // Crown
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.moveTo(x - hs + 4, y - hs);
+      ctx.lineTo(x - hs + 4, y - hs - 8);
+      ctx.lineTo(x, y - hs - 4);
+      ctx.lineTo(x + hs - 4, y - hs - 8);
+      ctx.lineTo(x + hs - 4, y - hs);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillRect(x - hs, y - hs, s, s);
+    }
+
+    // Eyes
+    ctx.fillStyle = '#fff';
+    const eyeY = y - hs * 0.15;
+    ctx.fillRect(x - hs * 0.4, eyeY - 2, 4, 4);
+    ctx.fillRect(x + hs * 0.1, eyeY - 2, 4, 4);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - hs * 0.35, eyeY - 1, 2, 2);
+    ctx.fillRect(x + hs * 0.15, eyeY - 1, 2, 2);
+
+    // Angry mouth
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - hs * 0.3, y + hs * 0.2, hs * 0.6, 2);
+
+    // HP bar for boss
+    if (this.isBoss) {
+      ctx.fillStyle = '#333';
+      ctx.fillRect(x - hs, y + hs + 2, s, 4);
+      ctx.fillStyle = '#ff4400';
+      ctx.fillRect(x - hs, y + hs + 2, s * (this.hp / this.maxHp), 4);
+    }
+
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// PROJECTILE CLASS
+// ============================================================
+class Projectile {
+  constructor(x, y, vx, vy, color) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.color = color || '#00ff88';
+    this.alive = true;
+    this.trail = [];
+    this.radius = 5;
+  }
+  update(grid) {
+    this.trail.push({x: this.x, y: this.y});
+    if (this.trail.length > 5) this.trail.shift();
+    this.x += this.vx;
+    this.y += this.vy;
+    // Check bounds
+    if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) {
+      this.alive = false; return;
+    }
+    // Check wall collision
+    const col = Math.floor(this.x / TILE);
+    const row = Math.floor(this.y / TILE);
+    if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+      const tile = grid[row][col];
+      if (tile === 1) { this.alive = false; return; }
+      if (tile === 'S') { this.alive = false; this.hitSpawner = { col, row }; return; }
+    }
+  }
+  draw(ctx) {
+    if (!this.alive) return;
+    // Trail
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = this.trail[i];
+      const alpha = (i / this.trail.length) * 0.5;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = this.color;
+      const r = (i / this.trail.length) * 4;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Main projectile
+    ctx.save();
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// SHOPPING CART (heckler weapon)
+// ============================================================
+class ShoppingCart {
+  constructor(x, y, vx) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = 0;
+    this.alive = true;
+    this.w = 24; this.h = 18;
+  }
+  update() {
+    this.x += this.vx;
+    if (this.x < -40 || this.x > W + 40) this.alive = false;
+  }
+  draw(ctx) {
+    if (!this.alive) return;
+    const x = this.x; const y = this.y;
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(x - 12, y - 9, 24, 14);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillRect(x - 12, y + 5, 24, 2);
+    // Wheels
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(x - 7, y + 9, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 7, y + 9, 3, 0, Math.PI*2); ctx.fill();
+    // Handle
+    ctx.fillStyle = '#888';
+    ctx.fillRect(x + 10, y - 12, 3, 14);
+  }
 }
 
 // ============================================================
 // GAME STATE
 // ============================================================
-const GAME_STATES = { TITLE: 'title', PLAYING: 'playing', DEAD: 'dead', WIN: 'win', BOSS_INTRO: 'boss_intro' };
-let gameState = GAME_STATES.TITLE;
-let stateTimer = 0;
-let cardRevealed = false;
-let cardFlipAngle = 0;
-let cardFlipping = false;
-let earnedCardIndex = 0;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
 
-const player = {
-  x: 1 * TILE + TILE/2,
-  y: 1 * TILE + TILE/2,
-  w: 22, h: 22,
-  speed: 3,
-  hp: 3,
-  maxHp: 3,
-  heldItem: null,
-  invincible: 0,
-  facing: 'down',
-  animFrame: 0,
-  animTimer: 0,
-  score: 0,
-  speedBoost: 0,
-  stunned: 0,  // frames stunned (wet floor)
+let gameState = 'TITLE'; // TITLE, PLAYING, DEAD, WIN, BOSS_WARN
+let frame = 0;
+let score = 0;
+let roomCode = genRoomCode();
+
+// Grid
+let grid;
+let spawners = [];
+let enemies = [];
+let projectiles = [];
+let particles = new ParticleSystem();
+let foodItems = [];   // {x, y, col, row, alive}
+let ammoItems = [];   // {x, y, col, row, alive}
+let portal = null;    // {x, y, active}
+let carts = [];       // shopping carts from heckler
+
+// Player state
+let player = {
+  x: 2.5 * TILE, y: 2.5 * TILE,
+  hp: PLAYER_START_HP,
+  ammo: PLAYER_START_AMMO,
+  facing: 'right',
+  damageCooldown: 0,
+  stunTimer: 0,
+  projectileColor: '#00ff88',
+  size: 16,
+  radius: 8
 };
 
-const ITEM_TYPES = [
-  { name: 'Flower Jar',  color: '#7c3aed', emoji: '🌸', damage: 2 },
-  { name: 'Pre-Roll',   color: '#16a34a', emoji: '🚬', damage: 1 },
-  { name: 'Edible',     color: '#f97316', emoji: '🍫', damage: 1 },
-  { name: 'Vape Cart',  color: '#0ea5e9', emoji: '💨', damage: 1 },
+// Boss reference
+let boss = null;
+
+// HP drain timer
+let hpDrainTimer = 0;
+
+// Room B entry tracking
+let enteredRoomB = false;
+let bossWarnTimer = 0;
+
+// Warning flash
+let warningFlash = 0;
+
+// Heckle messages
+let heckleMsgTimer = 0;
+let heckleMsgText = '';
+
+// Input state
+const keys = {};
+
+// Win/dead state
+let winCard = null;
+let cardFlipped = false;
+let cardFlipT = 0;
+
+// ============================================================
+// FOOD & AMMO POSITIONS (hardcoded on open floor)
+// ============================================================
+const FOOD_POSITIONS = [
+  // Room A (8 items)
+  {col:4, row:2}, {col:15, row:2}, {col:8, row:5}, {col:12, row:5},
+  {col:2, row:6}, {col:17, row:6}, {col:5, row:7}, {col:14, row:7},
+  // Room B (6 items)
+  {col:3, row:12}, {col:16, row:12}, {col:8, row:14}, {col:11, row:14},
+  {col:4, row:17}, {col:15, row:17}
 ];
 
-let pickups = [];
-let healthPacks = [];
-let speedBoosts = [];
-let projectiles = [];
-let enemies = [];
-let particles = [];
-let bossIntroShown = false;
-let kevinAlive = true;
-let kevinHp = 5;
-let // doorOpen removed — Kevin guards by presence
-let gameMessage = '';
-let gameMessageTimer = 0;
-
-const ENEMY_DEFS = {
-  chaos: { color: '#ef4444', size: 20, speed: 0.7, hp: 1, name: 'CHAOS', patrol: true, damage: 1 },
-  inspector: { color: '#a855f7', size: 20, speed: 1.2, hp: 1, name: 'INSPECTOR', patrol: false, damage: 1 },
-  kevin: { color: '#ff7a00', size: 28, speed: 1.0, hp: 5, name: 'KEVIN', patrol: false, damage: 2, isBoss: true },
-};
+const AMMO_POSITIONS = [
+  // Room A (6 items)
+  {col:6, row:2}, {col:13, row:2}, {col:2, row:4}, {col:17, row:4},
+  {col:3, row:7}, {col:16, row:7},
+  // Room B (6 items)
+  {col:5, row:13}, {col:14, row:13}, {col:2, row:15}, {col:17, row:15},
+  {col:7, row:17}, {col:12, row:17}
+];
 
 // ============================================================
-// INIT
+// INITIALIZATION
 // ============================================================
 function initGame() {
-  player.x = 1.5 * TILE;
-  player.y = 1.5 * TILE;
-  player.hp = 3;
-  player.heldItem = null;
-  player.invincible = 0;
-  player.score = 0;
-  player.speedBoost = 0;
-  player.speed = 3;
-  player.stunned = 0;
-  pickups = [];
-  healthPacks = [];
-  speedBoosts = [];
-  projectiles = [];
+  frame = 0;
+  score = 0;
   enemies = [];
-  particles = [];
-  wetFloorTiles = [];
-  cartObstacles = [];
-  bossIntroShown = false;
-  kevinAlive = true;
-  kevinHp = 5;
-  // doorOpen removed — Kevin guards by presence
-  cardRevealed = false;
-  cardFlipping = false;
-  cardFlipAngle = 0;
-  earnedCardIndex = 0;
-  gameMessage = '';
+  projectiles = [];
+  particles = new ParticleSystem();
+  carts = [];
+  enteredRoomB = false;
+  bossWarnTimer = 0;
+  warningFlash = 0;
+  boss = null;
 
+  player.x = 2.5 * TILE;
+  player.y = 2.5 * TILE;
+  player.hp = PLAYER_START_HP;
+  player.ammo = PLAYER_START_AMMO;
+  player.facing = 'right';
+  player.damageCooldown = 0;
+  player.stunTimer = 0;
+  player.projectileColor = '#00ff88';
+  hpDrainTimer = 0;
+  winCard = null;
+  cardFlipped = false;
+  cardFlipT = 0;
+  portal = null;
+
+  // Build grid
+  grid = buildMapGrid();
+
+  // Find spawners
+  spawners = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (MAP[r][c] === '2') {
-        const type = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
-        pickups.push({ x: c * TILE + TILE/2, y: r * TILE + TILE/2, type, collected: false });
-      }
-      if (MAP[r][c] === 'H') {
-        healthPacks.push({ x: c * TILE + TILE/2, y: r * TILE + TILE/2, collected: false });
-      }
-      if (MAP[r][c] === 'B') {
-        speedBoosts.push({ x: c * TILE + TILE/2, y: r * TILE + TILE/2, collected: false });
+      if (grid[r][c] === 'S') {
+        const isRoomB = r >= 11;
+        const sp = new Spawner(c, r, isRoomB);
+        spawners.push(sp);
       }
     }
   }
 
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const ch = MAP[r][c];
-      if (ch === '3') {
-        const def = (r < 7) ? ENEMY_DEFS.chaos : ENEMY_DEFS.inspector;
-        enemies.push({
-          x: c * TILE + TILE/2, y: r * TILE + TILE/2,
-          startX: c * TILE + TILE/2, startY: r * TILE + TILE/2,
-          vx: def.patrol ? def.speed : 0, vy: 0,
-          hp: def.hp, maxHp: def.hp, def,
-          patrolDist: TILE * 2.5, patrolDir: 1, patrolMoved: 0,
-          invincible: 0, dead: false, animFrame: 0, animTimer: 0,
-        });
-      }
-      if (ch === 'K') {
-        enemies.push({
-          x: c * TILE + TILE/2, y: r * TILE + TILE/2,
-          startX: c * TILE + TILE/2, startY: r * TILE + TILE/2,
-          vx: 0, vy: 0, hp: 5, maxHp: 5,
-          def: ENEMY_DEFS.kevin, invincible: 0, dead: false,
-          animFrame: 0, animTimer: 0, isBoss: true,
-        });
+  // Place food items
+  foodItems = FOOD_POSITIONS.map(p => ({
+    col: p.col, row: p.row,
+    x: p.col * TILE + TILE/2,
+    y: p.row * TILE + TILE/2,
+    alive: true,
+    pulseT: Math.random() * Math.PI * 2
+  }));
+
+  // Place ammo items
+  ammoItems = AMMO_POSITIONS.map(p => ({
+    col: p.col, row: p.row,
+    x: p.col * TILE + TILE/2,
+    y: p.row * TILE + TILE/2,
+    alive: true,
+    pulseT: Math.random() * Math.PI * 2
+  }));
+
+  // Place boss at row 14, col 10
+  boss = new Enemy(10 * TILE + TILE/2, 14 * TILE + TILE/2, 'boss');
+  boss.active = false; // inactive until player enters Room B
+
+  updateHUD();
+  document.getElementById('kevin-hp-bar').style.display = 'none';
+}
+
+// ============================================================
+// CARD SELECTION
+// ============================================================
+function selectCard() {
+  const hp = player.hp;
+  const s = score;
+  if (hp > 9 && s > 500) return { name: 'PHANTOM STASH', rarity: 'Ultra Rare', color: '#ff00ff', desc: 'Mystical product from another dimension', emoji: '👻' };
+  if (s > 400) return { name: "KEVIN'S STASH", rarity: 'Rare', color: '#ff6600', desc: 'Confiscated by the big man himself', emoji: '😤' };
+  if (s > 250) return { name: 'BACK ROOM FIND', rarity: 'Uncommon', color: '#4af0ff', desc: 'Found behind the freezer section', emoji: '🚪' };
+  if (s > 100) return { name: 'FLOOR SAMPLE', rarity: 'Common Promo', color: '#00ff88', desc: 'Someone left this on the floor', emoji: '🌿' };
+  return { name: 'CLEARANCE BIN SPECIAL', rarity: 'Common', color: '#888888', desc: 'You get what you get', emoji: '🗑️' };
+}
+
+// ============================================================
+// SPAWNER LOGIC
+// ============================================================
+function updateSpawners() {
+  for (const sp of spawners) {
+    if (!sp.alive) continue;
+    sp.timer++;
+    sp.update();
+    if (sp.timer >= SPAWN_INTERVAL) {
+      sp.timer = 0;
+      if (enemies.filter(e => e.alive).length < MAX_ENEMIES) {
+        spawnEnemy(sp);
       }
     }
   }
-
-  updateHUD();
 }
 
-// ============================================================
-// INPUT
-// ============================================================
-const keys = {};
-window.addEventListener('keydown', e => {
-  keys[e.code] = true;
-  if ((e.code === 'Space' || e.code === 'KeyZ') && gameState === GAME_STATES.PLAYING) throwItem();
-  if (e.code === 'Enter' || e.code === 'Space') {
-    if (gameState === GAME_STATES.TITLE) { gameState = GAME_STATES.PLAYING; initGame(); }
-    if (gameState === GAME_STATES.DEAD) { gameState = GAME_STATES.PLAYING; initGame(); }
-    if (gameState === GAME_STATES.WIN && cardRevealed) { gameState = GAME_STATES.TITLE; }
-    if (gameState === GAME_STATES.WIN && !cardFlipping) { cardFlipping = true; }
+function spawnEnemy(sp) {
+  // Find adjacent open floor tile
+  const dirs = [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]];
+  for (const [dc, dr] of dirs) {
+    const nc = sp.col + dc;
+    const nr = sp.row + dr;
+    if (!isSolid(grid, nc, nr)) {
+      const x = nc * TILE + TILE/2;
+      const y = nr * TILE + TILE/2;
+      let type;
+      if (sp.roomB) {
+        type = Math.random() < 0.7 ? 'ghost' : 'inspector';
+      } else {
+        type = Math.random() < 0.6 ? 'chaos' : 'inspector';
+      }
+      enemies.push(new Enemy(x, y, type));
+      return;
+    }
   }
-});
-window.addEventListener('keyup', e => { keys[e.code] = false; });
-
-const dpadState = { up: false, down: false, left: false, right: false };
-function bindDpad(id, dir) {
-  const btn = document.getElementById(id);
-  btn.addEventListener('touchstart', e => { e.preventDefault(); dpadState[dir] = true; }, { passive: false });
-  btn.addEventListener('touchend',   e => { e.preventDefault(); dpadState[dir] = false; }, { passive: false });
-  btn.addEventListener('mousedown',  () => dpadState[dir] = true);
-  btn.addEventListener('mouseup',    () => dpadState[dir] = false);
-}
-bindDpad('btn-up', 'up');
-bindDpad('btn-down', 'down');
-bindDpad('btn-left', 'left');
-bindDpad('btn-right', 'right');
-
-document.getElementById('throw-btn').addEventListener('click', () => {
-  if (gameState === GAME_STATES.PLAYING) throwItem();
-  if (gameState === GAME_STATES.WIN && !cardFlipping && !cardRevealed) { cardFlipping = true; }
-  if (gameState === GAME_STATES.WIN && cardRevealed) { gameState = GAME_STATES.TITLE; }
-  if (gameState === GAME_STATES.TITLE) { gameState = GAME_STATES.PLAYING; initGame(); }
-  if (gameState === GAME_STATES.DEAD) { gameState = GAME_STATES.PLAYING; initGame(); }
-});
-
-// ============================================================
-// COLLISION HELPERS
-// ============================================================
-function tileAt(px, py) {
-  const c = Math.floor(px / TILE);
-  const r = Math.floor(py / TILE);
-  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return '1';
-  return MAP[r][c];
-}
-
-function isWall(px, py) {
-  const ch = tileAt(px, py);
-  if (ch === '1') return true;
-  if (ch === 'H' || ch === 'B') return false;
-  // No door lock — Kevin guards by presence
-  return false;
-}
-
-function canMove(nx, ny, w, h) {
-  const half = Math.floor(w / 2) - 2;
-  return !isWall(nx - half, ny - half) &&
-         !isWall(nx + half, ny - half) &&
-         !isWall(nx - half, ny + half) &&
-         !isWall(nx + half, ny + half);
 }
 
 // ============================================================
-// PLAYER ACTIONS
+// ENEMY-ENEMY SEPARATION
 // ============================================================
-function throwItem() {
-  if (!player.heldItem) return;
-  let vx = 0, vy = 0;
-  if (player.facing === 'up')    vy = -6;
-  if (player.facing === 'down')  vy =  6;
-  if (player.facing === 'left')  vx = -6;
-  if (player.facing === 'right') vx =  6;
-  projectiles.push({
-    x: player.x, y: player.y, vx, vy,
-    damage: player.heldItem.damage,
-    color: player.heldItem.color,
-    emoji: player.heldItem.emoji,
-    life: 80, owner: 'player',
-  });
-  player.heldItem = null;
-  updateHUD();
+function separateEnemies() {
+  const alive = enemies.filter(e => e.alive);
+  for (let i = 0; i < alive.length; i++) {
+    for (let j = i+1; j < alive.length; j++) {
+      const a = alive[i]; const b = alive[j];
+      const minDist = (a.radius + b.radius) * 0.8;
+      const dx = b.x - a.x; const dy = b.y - a.y;
+      const d = Math.sqrt(dx*dx + dy*dy) || 0.001;
+      if (d < minDist) {
+        const push = (minDist - d) / 2;
+        const nx = dx/d; const ny = dy/d;
+        if (!a.isBoss) { a.x -= nx * push * 0.5; a.y -= ny * push * 0.5; }
+        if (!b.isBoss) { b.x += nx * push * 0.5; b.y += ny * push * 0.5; }
+      }
+    }
+  }
 }
 
 // ============================================================
-// UPDATE
+// MAIN UPDATE FUNCTION
 // ============================================================
 function update() {
-  if (gameState === GAME_STATES.TITLE || gameState === GAME_STATES.DEAD) return;
+  if (gameState !== 'PLAYING' && gameState !== 'BOSS_WARN') return;
 
-  if (gameState === GAME_STATES.WIN) {
-    if (cardFlipping && cardFlipAngle < Math.PI) {
-      cardFlipAngle += 0.06;
-      if (cardFlipAngle >= Math.PI) { cardFlipAngle = Math.PI; cardRevealed = true; cardFlipping = false; }
+  frame++;
+  const dt = 1/60;
+
+  // Boss warn countdown
+  if (gameState === 'BOSS_WARN') {
+    bossWarnTimer--;
+    if (bossWarnTimer <= 0) {
+      gameState = 'PLAYING';
+      document.getElementById('room-label').style.display = 'none';
     }
     return;
   }
 
-  stateTimer++;
-
-  // Speed boost tick-down
-  if (player.speedBoost > 0) {
-    player.speedBoost--;
-    player.speed = 5;
-    if (player.speedBoost === 0) player.speed = 3;
+  // HP drain
+  hpDrainTimer++;
+  if (hpDrainTimer >= HP_DRAIN_INTERVAL) {
+    hpDrainTimer = 0;
+    player.hp = Math.max(0, player.hp - 1);
+    if (player.hp <= 0) { die(); return; }
   }
 
-  // Stun tick-down
-  if (player.stunned > 0) player.stunned--;
-
-  // ---- Player movement ----
-  let dx = 0, dy = 0;
-  if (player.stunned === 0) {
-    if (keys['ArrowUp']    || keys['KeyW'] || dpadState.up)    dy = -player.speed;
-    if (keys['ArrowDown']  || keys['KeyS'] || dpadState.down)  dy =  player.speed;
-    if (keys['ArrowLeft']  || keys['KeyA'] || dpadState.left)  dx = -player.speed;
-    if (keys['ArrowRight'] || keys['KeyD'] || dpadState.right) dx =  player.speed;
+  // Warning flash
+  if (player.hp <= 3) {
+    warningFlash = (warningFlash + 1) % 60;
+    document.getElementById('warning-text').style.display = warningFlash < 30 ? 'block' : 'none';
+  } else {
+    document.getElementById('warning-text').style.display = 'none';
   }
 
-  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+  // Player stun
+  if (player.stunTimer > 0) { player.stunTimer--; }
 
-  if (dx !== 0 || dy !== 0) {
-    player.animTimer++;
-    if (player.animTimer > 8) { player.animFrame = (player.animFrame + 1) % 2; player.animTimer = 0; }
-    if (Math.abs(dx) > Math.abs(dy)) player.facing = dx > 0 ? 'right' : 'left';
-    else player.facing = dy > 0 ? 'down' : 'up';
-  }
+  // Player movement
+  if (player.stunTimer === 0) {
+    let mx = 0; let my = 0;
+    if (keys['ArrowLeft'] || keys['KeyA'] || keys['left']) mx -= 1;
+    if (keys['ArrowRight'] || keys['KeyD'] || keys['right']) mx += 1;
+    if (keys['ArrowUp'] || keys['KeyW'] || keys['up']) my -= 1;
+    if (keys['ArrowDown'] || keys['KeyS'] || keys['down']) my += 1;
 
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  if (canMove(nx, player.y, player.w, player.h)) player.x = nx;
-  if (canMove(player.x, ny, player.w, player.h)) player.y = ny;
-
-  player.x = Math.max(TILE + player.w/2, Math.min(player.x, (COLS-1)*TILE - player.w/2));
-  player.y = Math.max(TILE + player.h/2, Math.min(player.y, (ROWS-1)*TILE - player.h/2));
-
-  if (player.invincible > 0) player.invincible--;
-
-  // ---- Wet floor check ----
-  for (let i = wetFloorTiles.length - 1; i >= 0; i--) {
-    const wf = wetFloorTiles[i];
-    wf.life--;
-    if (wf.life <= 0) { wetFloorTiles.splice(i, 1); continue; }
-    if (player.stunned === 0 && Math.hypot(player.x - wf.x, player.y - wf.y) < TILE * 0.7) {
-      player.stunned = 60;
-      showMessage('💦 Slipped on wet floor!');
+    if (mx !== 0 || my !== 0) {
+      const len = Math.sqrt(mx*mx + my*my);
+      mx /= len; my /= len;
+      if (mx < 0) player.facing = 'left';
+      else if (mx > 0) player.facing = 'right';
+      else if (my < 0) player.facing = 'up';
+      else if (my > 0) player.facing = 'down';
+      moveWithCollision(grid, player, mx * PLAYER_SPEED, my * PLAYER_SPEED, player.radius);
     }
   }
 
-  // ---- Cart obstacle check ----
-  for (let i = cartObstacles.length - 1; i >= 0; i--) {
-    const cart = cartObstacles[i];
-    cart.x += cart.vx;
-    cart.life--;
-    if (cart.life <= 0 || isWall(cart.x, cart.y)) {
-      cartObstacles.splice(i, 1);
-      continue;
-    }
-    // Hit player
-    if (!cart.hit && player.invincible === 0) {
-      if (Math.abs(cart.x - player.x) < (cart.w + player.w) / 2 &&
-          Math.abs(cart.y - player.y) < (cart.h + player.h) / 2) {
-        cart.hit = true;
-        player.hp -= 1;
-        player.invincible = 90;
-        spawnParticles(player.x, player.y, '#9ca3af', 8);
-        updateHUD();
-        if (player.hp <= 0) { gameState = GAME_STATES.DEAD; return; }
+  // Check Room B entry
+  const playerRow = Math.floor(player.y / TILE);
+  if (!enteredRoomB && playerRow >= 11) {
+    enteredRoomB = true;
+    boss.active = true;
+    enemies.push(boss);
+    gameState = 'BOSS_WARN';
+    bossWarnTimer = 120; // 2 seconds
+    document.getElementById('room-label').style.display = 'block';
+    document.getElementById('kevin-hp-bar').style.display = 'block';
+  }
+
+  // Update enemies
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    if (e === boss && !e.active) continue;
+    e.update(grid, player, frame);
+  }
+
+  // Enemy-enemy separation
+  separateEnemies();
+
+  // Enemy-player collision
+  if (player.damageCooldown > 0) player.damageCooldown--;
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    if (e === boss && !e.active) continue;
+    const d = dist(e.x, e.y, player.x, player.y);
+    if (d < e.radius + player.radius) {
+      if (player.damageCooldown === 0) {
+        player.hp--;
+        player.damageCooldown = DAMAGE_COOLDOWN;
+        particles.emit(player.x, player.y, 6, {color:'#ff4444', minSpeed:40, maxSpeed:100, minLife:0.2, maxLife:0.5, minSize:3, maxSize:6, gravity:0});
+        if (player.hp <= 0) { die(); return; }
       }
     }
   }
 
-  // ---- Pickup collection ----
-  for (const p of pickups) {
-    if (p.collected) continue;
-    if (Math.hypot(p.x - player.x, p.y - player.y) < TILE * 0.8 && !player.heldItem) {
-      player.heldItem = p.type;
-      p.collected = true;
-      showMessage('Got ' + p.type.emoji + ' ' + p.type.name + '!');
-      updateHUD();
-    }
-  }
-
-  // ---- Health pack collection ----
-  for (const h of healthPacks) {
-    if (h.collected) continue;
-    if (Math.hypot(h.x - player.x, h.y - player.y) < TILE * 0.8) {
-      h.collected = true;
-      if (player.hp < player.maxHp) {
-        player.hp = Math.min(player.maxHp, player.hp + 1);
-        showMessage('❤️ Health restored!');
-        updateHUD();
-      } else {
-        showMessage('❤️ Already at full health!');
+  // Shopping carts (heckler)
+  for (const cart of carts) {
+    cart.update();
+    if (!cart.alive) continue;
+    if (Math.abs(cart.y - player.y) < 20 && Math.abs(cart.x - player.x) < 18) {
+      if (player.damageCooldown === 0) {
+        player.hp--;
+        player.damageCooldown = DAMAGE_COOLDOWN;
+        if (player.hp <= 0) { die(); return; }
       }
     }
   }
+  carts = carts.filter(c => c.alive);
 
-  // ---- Speed boost collection ----
-  for (const b of speedBoosts) {
-    if (b.collected) continue;
-    if (Math.hypot(b.x - player.x, b.y - player.y) < TILE * 0.8) {
-      b.collected = true;
-      player.speedBoost = 120;
-      player.speed = 5;
-      showMessage('⚡ Speed boost!');
-    }
-  }
-
-  // ---- Treasure check ----
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (MAP[r][c] === 'T') {
-        const tx = c * TILE + TILE/2, ty = r * TILE + TILE/2;
-        if (Math.hypot(player.x - tx, player.y - ty) < TILE * 1.0) {
-              if (!kevinAlive) {
-          earnedCardIndex = getEarnedCardIndex();
-              gameState = GAME_STATES.WIN;
-              } else {
-                showMessage('⚔️ Defeat Kevin first!');
-              }
-            }
-          }
+  // Update projectiles
+  for (const p of projectiles) {
+    if (!p.alive) continue;
+    p.update(grid);
+    if (p.hitSpawner) {
+      // Hit a spawner
+      const { col, row } = p.hitSpawner;
+      const sp = spawners.find(s => s.col === col && s.row === row && s.alive);
+      if (sp) {
+        if (sp.hit()) {
+          // Destroy spawner
+          sp.alive = false;
+          grid[sp.row][sp.col] = 0;
+          score += 50;
+          particles.emit(sp.x, sp.y, 20, {color:'#ff8800', minSpeed:60, maxSpeed:180, minLife:0.4, maxLife:0.9, minSize:4, maxSize:9, gravity:100});
+        } else {
+          particles.emit(sp.x, sp.y, 5, {color:'#ff4400', minSpeed:30, maxSpeed:80, minLife:0.2, maxLife:0.4, minSize:2, maxSize:5, gravity:50});
         }
       }
+      p.hitSpawner = null;
     }
-  }
-
-  // ---- Enemy update ----
-  for (const e of enemies) {
-    if (e.dead) continue;
-    e.animTimer++;
-    if (e.animTimer > 12) { e.animFrame = (e.animFrame + 1) % 2; e.animTimer = 0; }
-    if (e.invincible > 0) e.invincible--;
-
-    if (e.def.patrol && !e.isBoss && !e.isMiniKevin) {
-      e.patrolMoved += e.def.speed;
-      e.x += e.def.speed * e.patrolDir;
-      if (e.patrolMoved >= e.patrolDist || isWall(e.x + e.def.size/2 * e.patrolDir, e.y)) {
-        e.patrolDir *= -1;
-        e.patrolMoved = 0;
-      }
-    } else {
-      const dist = Math.hypot(player.x - e.x, player.y - e.y);
-      const aggroRange = e.isBoss ? 999 : (e.isMiniKevin ? 999 : TILE * 5);
-      if (dist < aggroRange && dist > 2) {
-        const ang = Math.atan2(player.y - e.y, player.x - e.x);
-        const spd = e.isBoss ? (kevinHp <= 2 ? e.def.speed * 1.6 : e.def.speed) : e.def.speed;
-        const ex = e.x + Math.cos(ang) * spd;
-        const ey = e.y + Math.sin(ang) * spd;
-        if (canMove(ex, e.y, e.def.size, e.def.size)) e.x = ex;
-        if (canMove(e.x, ey, e.def.size, e.def.size)) e.y = ey;
-      }
-    }
-
-    if (player.invincible === 0) {
-      const dist = Math.hypot(player.x - e.x, player.y - e.y);
-      if (dist < (e.def.size + player.w) / 2 - 2) {
-        player.hp -= e.def.damage;
-        player.invincible = 90;
-        spawnParticles(player.x, player.y, '#ef4444', 8);
-        updateHUD();
-        if (player.hp <= 0) { gameState = GAME_STATES.DEAD; return; }
-      }
-    }
-  }
-
-  // ---- Projectile update ----
-  for (let i = projectiles.length - 1; i >= 0; i--) {
-    const p = projectiles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life--;
-
-    if (isWall(p.x, p.y) || p.life <= 0) {
-      spawnParticles(p.x, p.y, p.color, 5);
-      projectiles.splice(i, 1);
-      continue;
-    }
-
+    // Check enemy collision
     for (const e of enemies) {
-      if (e.dead || e.invincible > 0) continue;
-      if (Math.hypot(p.x - e.x, p.y - e.y) < e.def.size / 2 + 6) {
-        e.hp -= p.damage;
-        e.invincible = 30;
-        spawnParticles(e.x, e.y, p.color, 6);
-        projectiles.splice(i, 1);
-        if (e.hp <= 0) {
-          e.dead = true;
-          spawnParticles(e.x, e.y, '#ffe066', 12);
-          player.score += (e.isBoss ? 50 : (e.isMiniKevin ? 5 : 10));
+      if (!e.alive || !p.alive) continue;
+      if (e === boss && !e.active) continue;
+      const d = dist(p.x, p.y, e.x, e.y);
+      if (d < e.radius + p.radius) {
+        p.alive = false;
+        const killed = e.hit(1);
+        particles.emit(e.x, e.y, 8, {color: e.color, minSpeed:50, maxSpeed:150, minLife:0.3, maxLife:0.6, minSize:3, maxSize:7, gravity:0});
+        if (killed) {
+          score += e.points;
           if (e.isBoss) {
-            kevinAlive = false;
-            showMessage('🎉 KEVIN IS DOWN! GRAB THE TREASURE!');
+            // Boss defeated!
+            bossDefeated();
           }
         }
         break;
       }
     }
   }
+  projectiles = projectiles.filter(p => p.alive);
 
-  // ---- Particles ----
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx; p.y += p.vy;
-    p.life--;
-    p.vy += 0.05;
-    if (p.life <= 0) particles.splice(i, 1);
+  // Food pickup
+  for (const f of foodItems) {
+    if (!f.alive) continue;
+    f.pulseT += 0.07;
+    const d = dist(f.x, f.y, player.x, player.y);
+    if (d < 14) {
+      f.alive = false;
+      player.hp = Math.min(PLAYER_MAX_HP, player.hp + 3);
+      particles.emit(f.x, f.y, 10, {color:'#00ff88', minSpeed:40, maxSpeed:100, minLife:0.3, maxLife:0.6, minSize:3, maxSize:6, gravity:-50});
+    }
   }
 
-  if (gameMessageTimer > 0) gameMessageTimer--;
+  // Ammo pickup
+  for (const a of ammoItems) {
+    if (!a.alive) continue;
+    a.pulseT += 0.07;
+    const d = dist(a.x, a.y, player.x, player.y);
+    if (d < 14) {
+      a.alive = false;
+      player.ammo += 3;
+      player.projectileColor = `hsl(${Math.random()*360}, 100%, 60%)`;
+      particles.emit(a.x, a.y, 8, {color:'#4af0ff', minSpeed:40, maxSpeed:100, minLife:0.3, maxLife:0.6, minSize:3, maxSize:6, gravity:0});
+    }
+  }
+
+  // Portal pickup
+  if (portal && portal.active) {
+    const d = dist(portal.x, portal.y, player.x, player.y);
+    if (d < 20) {
+      gameState = 'WIN';
+      winCard = selectCard();
+    }
+  }
+
+  // Spawn interval
+  updateSpawners();
+
+  // Particles
+  particles.update(dt);
+
+  // Clean dead enemies
+  enemies = enemies.filter(e => e.alive || (e === boss && boss));
+
+  // Heckle msg countdown
+  if (heckleMsgTimer > 0) {
+    heckleMsgTimer--;
+    if (heckleMsgTimer === 0) {
+      document.getElementById('heckle-msg').style.display = 'none';
+    }
+  }
+
+  updateHUD();
 }
 
 // ============================================================
-// HELPERS
+// BOSS DEFEATED
 // ============================================================
-function spawnParticles(x, y, color, count) {
-  for (let i = 0; i < count; i++) {
-    const ang = Math.random() * Math.PI * 2;
-    const spd = 1 + Math.random() * 3;
-    particles.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, life: 20 + Math.random()*15, color });
+function bossDefeated() {
+  particles.emit(boss.x, boss.y, 40, {color:'#ff6600', minSpeed:80, maxSpeed:250, minLife:0.5, maxLife:1.2, minSize:5, maxSize:12, gravity:0});
+  particles.emit(boss.x, boss.y, 20, {color:'#ffd700', minSpeed:60, maxSpeed:200, minLife:0.6, maxLife:1.0, minSize:4, maxSize:10, gravity:0});
+  // Spawn exit portal
+  portal = {
+    x: 9 * TILE + TILE/2,
+    y: 17 * TILE + TILE/2,
+    active: true,
+    pulseT: 0
+  };
+}
+
+// ============================================================
+// THROW PROJECTILE
+// ============================================================
+function throwProjectile() {
+  if (gameState !== 'PLAYING') return;
+  if (player.ammo <= 0) {
+    // Flash "OUT OF AMMO"
+    showHeckleMsg('OUT OF AMMO! 🚫');
+    return;
   }
+  player.ammo--;
+  let vx = 0; let vy = 0;
+  switch(player.facing) {
+    case 'right': vx = PROJECTILE_SPEED; break;
+    case 'left':  vx = -PROJECTILE_SPEED; break;
+    case 'up':    vy = -PROJECTILE_SPEED; break;
+    case 'down':  vy = PROJECTILE_SPEED; break;
+  }
+  projectiles.push(new Projectile(
+    player.x + vx * 2,
+    player.y + vy * 2,
+    vx, vy,
+    player.projectileColor
+  ));
+  // SFX
+  playSFX(440, 0.08, 'square', 0.15);
 }
 
-function showMessage(msg) {
-  gameMessage = msg;
-  gameMessageTimer = 120;
+// ============================================================
+// DIE / WIN
+// ============================================================
+function die() {
+  gameState = 'DEAD';
+  particles.emit(player.x, player.y, 30, {color:'#ff4444', minSpeed:60, maxSpeed:200, minLife:0.5, maxLife:1.0, minSize:4, maxSize:10, gravity:80});
+  playSFX(120, 0.6, 'sawtooth', 0.8);
 }
 
+// ============================================================
+// HUD UPDATES
+// ============================================================
 function updateHUD() {
-  document.getElementById('hp-display').textContent = '♥'.repeat(Math.max(0,player.hp)) + '♡'.repeat(Math.max(0,player.maxHp - player.hp));
-  document.getElementById('item-display').textContent = player.heldItem ? player.heldItem.emoji + ' ' + player.heldItem.name : '—';
+  // HP bar
+  const pct = (player.hp / PLAYER_MAX_HP) * 100;
+  const fill = document.getElementById('hp-bar-fill');
+  fill.style.width = pct + '%';
+  if (pct > 50) fill.style.background = '#00ff44';
+  else if (pct > 25) fill.style.background = '#ffaa00';
+  else fill.style.background = '#ff2200';
+  document.getElementById('hp-text').textContent = `${player.hp}/${PLAYER_MAX_HP}`;
+
+  document.getElementById('ammo-display').textContent = `⚡ AMMO: ${player.ammo}`;
+  document.getElementById('score-display').textContent = `★ SCORE: ${score}`;
+  document.getElementById('room-code').textContent = `ROOM: ${roomCode}`;
+
+  // Kevin HP bar
+  if (boss && boss.isBoss && enteredRoomB) {
+    document.getElementById('kevin-hp-bar').style.display = 'block';
+    const kPct = (boss.hp / boss.maxHp) * 100;
+    document.getElementById('kevin-bar-fill').style.width = kPct + '%';
+    document.getElementById('kevin-hp-text').textContent = `${Math.max(0,boss.hp)}/${boss.maxHp}`;
+  }
 }
 
 // ============================================================
-// DRAW
+// SHOW HECKLE MESSAGE
 // ============================================================
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function showHeckleMsg(msg) {
+  const el = document.getElementById('heckle-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  heckleMsgTimer = 180;
+}
 
-  if (gameState === GAME_STATES.TITLE) { drawTitle(); return; }
-  if (gameState === GAME_STATES.DEAD)  { drawDead(); return; }
-  if (gameState === GAME_STATES.WIN)   { drawWin(); return; }
+// ============================================================
+// AUDIO (Web Audio API procedural SFX)
+// ============================================================
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playSFX(freq, vol, type, duration) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol || 0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration || 0.1));
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + (duration || 0.1));
+  } catch(e) {}
+}
 
-  const camX = Math.max(0, Math.min(player.x - canvas.width/2,  COLS*TILE - canvas.width));
-  const camY = Math.max(0, Math.min(player.y - canvas.height/2, ROWS*TILE - canvas.height));
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  if (gameState === 'TITLE') {
+    drawTitle();
+    return;
+  }
+  if (gameState === 'DEAD') {
+    drawDead();
+    return;
+  }
+  if (gameState === 'WIN') {
+    drawWin();
+    return;
+  }
+
+  // Draw world (PLAYING or BOSS_WARN)
+  drawWorld();
+  drawPickups();
+  drawSpawners();
+  drawPortal();
+  drawEnemies();
+  drawProjectiles();
+  drawPlayer();
+  drawCarts();
+  particles.draw(ctx);
+  drawMinimap();
+}
+
+// ============================================================
+// DRAW WORLD (tiles)
+// ============================================================
+function drawWorld() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const tile = grid[r][c];
+      const x = c * TILE;
+      const y = r * TILE;
+      const isRoomB = r >= 11;
+
+      if (tile === 1) {
+        // Wall
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(x, y, TILE, TILE);
+        // Accent stripe
+        ctx.fillStyle = isRoomB ? 'rgba(100,0,150,0.3)' : 'rgba(0,80,0,0.3)';
+        ctx.fillRect(x, y, TILE, 3);
+        // Wall bevel
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillRect(x, y, TILE, 1);
+        ctx.fillRect(x, y, 1, TILE);
+      } else if (tile === 0 || tile === 'S') {
+        // Floor
+        const floorColor = isRoomB ? '#1a0d2e' : '#0d1a0d';
+        ctx.fillStyle = floorColor;
+        ctx.fillRect(x, y, TILE, TILE);
+        // Subtle grid
+        ctx.strokeStyle = isRoomB ? 'rgba(80,0,100,0.15)' : 'rgba(0,50,0,0.15)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x, y, TILE, TILE);
+      }
+    }
+  }
+}
+
+// ============================================================
+// DRAW PICKUPS
+// ============================================================
+function drawPickups() {
+  const t = frame / 60;
+
+  for (const f of foodItems) {
+    if (!f.alive) continue;
+    const pulse = 0.7 + 0.3 * Math.sin(f.pulseT);
+    ctx.save();
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 8 * pulse;
+    ctx.fillStyle = `rgba(0, 255, 100, ${0.5 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 10 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00ff88';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🍃', f.x, f.y);
+    ctx.restore();
+  }
+
+  for (const a of ammoItems) {
+    if (!a.alive) continue;
+    const pulse = 0.7 + 0.3 * Math.sin(a.pulseT + 1.5);
+    ctx.save();
+    ctx.shadowColor = '#4af0ff';
+    ctx.shadowBlur = 8 * pulse;
+    ctx.fillStyle = `rgba(74, 240, 255, ${0.4 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 9 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#4af0ff';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', a.x, a.y);
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// DRAW SPAWNERS
+// ============================================================
+function drawSpawners() {
+  for (const sp of spawners) {
+    sp.draw(ctx, frame);
+  }
+}
+
+// ============================================================
+// DRAW PORTAL
+// ============================================================
+function drawPortal() {
+  if (!portal || !portal.active) return;
+  portal.pulseT = (portal.pulseT || 0) + 0.08;
+  const pulse = 0.5 + 0.5 * Math.sin(portal.pulseT);
+  const x = portal.x;
+  const y = portal.y;
 
   ctx.save();
-  ctx.translate(-camX, -camY);
+  // Outer glow
+  const grd = ctx.createRadialGradient(x, y, 4, x, y, 22);
+  grd.addColorStop(0, `rgba(0,255,200,${0.9 * pulse})`);
+  grd.addColorStop(1, 'rgba(0,255,200,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x, y, 22, 0, Math.PI * 2);
+  ctx.fill();
 
-  // ---- Draw tiles ----
-  for (let r = 0; r < ROWS; r++) {
-    const zone = getZoneFloor(r);
-    for (let c = 0; c < COLS; c++) {
-      const ch = MAP[r][c];
-      const tx = c * TILE, ty = r * TILE;
+  // Inner portal
+  ctx.fillStyle = `rgba(0, 255, 180, ${0.6 + 0.3 * pulse})`;
+  ctx.beginPath();
+  ctx.arc(x, y, 12, 0, Math.PI * 2);
+  ctx.fill();
 
-      if (ch === '1') {
-        ctx.fillStyle = '#2a2a2a';
-        ctx.fillRect(tx, ty, TILE, TILE);
-        ctx.fillStyle = zone.color + '55';
-        ctx.fillRect(tx+2, ty+2, TILE-4, TILE-4);
-        ctx.strokeStyle = '#111';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(tx, ty, TILE, TILE);
-      } else if (ch === 'T') {
-        ctx.fillStyle = '#1a1020';
-        ctx.fillRect(tx, ty, TILE, TILE);
-        if (doorOpen) {
-          ctx.font = '22px serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('📦', tx + TILE/2, ty + TILE/2 + 8);
-        }
-      } else if (ch === 'H') {
-        ctx.fillStyle = zone.floor;
-        ctx.fillRect(tx, ty, TILE, TILE);
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(tx, ty, TILE, TILE);
-        const hpack = healthPacks.find(h => Math.round(h.x) === tx + TILE/2 && Math.round(h.y) === ty + TILE/2);
-        if (!hpack || !hpack.collected) {
-          const pulse = 0.8 + Math.sin(stateTimer * 0.1) * 0.2;
-          ctx.save();
-          ctx.translate(tx + TILE/2, ty + TILE/2);
-          ctx.scale(pulse, pulse);
-          ctx.fillStyle = 'rgba(220,38,38,0.85)';
-          ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(-6, -2, 12, 4);
-          ctx.fillRect(-2, -6, 4, 12);
-          ctx.restore();
-        }
-      } else if (ch === 'B') {
-        ctx.fillStyle = zone.floor;
-        ctx.fillRect(tx, ty, TILE, TILE);
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(tx, ty, TILE, TILE);
-        const bpack = speedBoosts.find(b => Math.round(b.x) === tx + TILE/2 && Math.round(b.y) === ty + TILE/2);
-        if (!bpack || !bpack.collected) {
-          const pulse = 0.85 + Math.sin(stateTimer * 0.12) * 0.15;
-          ctx.save();
-          ctx.translate(tx + TILE/2, ty + TILE/2);
-          ctx.scale(pulse, pulse);
-          ctx.fillStyle = 'rgba(234,179,8,0.9)';
-          ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
-          ctx.font = '13px serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('⚡', 0, 5);
-          ctx.restore();
-        }
-      } else {
-        ctx.fillStyle = zone.floor;
-        ctx.fillRect(tx, ty, TILE, TILE);
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(tx, ty, TILE, TILE);
-        if (c === 1 && r === zone.rows[0] && zone.label) {
-          ctx.fillStyle = zone.color + 'aa';
-          ctx.font = 'bold 9px Courier New';
-          ctx.textAlign = 'left';
-          ctx.fillText(zone.label, tx + 2, ty + 11);
-        }
-        // Guide arrows on row 14 — point down toward boss
-        if (r === 14 && ch !== '1') {
-          ctx.fillStyle = 'rgba(255,122,0,0.4)';
-          ctx.font = 'bold 13px Courier New';
-          ctx.textAlign = 'center';
-          ctx.fillText('▼', tx + TILE/2, ty + TILE/2 + 5);
-        
-        }
-      }
-
-      if (r === 12 && ch !== '1' && !kevinAlive) { ctx.fillStyle = '#4ade8044'; ctx.fillRect(tx,ty,TILE,TILE); } else if (r === 12 && ch !== '1' && kevinAlive) {
-        ctx.fillStyle = '#444';
-        ctx.fillRect(tx, ty, TILE, TILE);
-        ctx.fillStyle = '#ff7a00';
-        ctx.font = '9px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('BOSS', tx + TILE/2, ty + TILE/2 + 3);
-      }
-    }
-  }
-
-  // Zone dividers
-  for (const z of ZONE_COLORS) {
-    const y = z.rows[0] * TILE;
-    ctx.strokeStyle = z.color + '55';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(COLS * TILE, y); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // ---- Wet floor tiles ----
-  for (const wf of wetFloorTiles) {
-    const alpha = Math.min(1, wf.life / 60) * 0.85;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(wf.x, wf.y);
-    // Yellow puddle
-    ctx.fillStyle = '#fbbf24';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, TILE * 0.6, TILE * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = alpha;
-    ctx.font = '16px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚠️', 0, 6);
-    ctx.restore();
-  }
-
-  // ---- Cart obstacles ----
-  for (const cart of cartObstacles) {
-    ctx.save();
-    ctx.translate(cart.x, cart.y);
-    ctx.fillStyle = '#6b7280';
-    ctx.fillRect(-cart.w/2, -cart.h/2, cart.w, cart.h);
-    ctx.strokeStyle = '#9ca3af';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(-cart.w/2, -cart.h/2, cart.w, cart.h);
-    // Wheels
-    ctx.fillStyle = '#374151';
-    ctx.fillRect(-cart.w/2 + 2, cart.h/2 - 4, 8, 4);
-    ctx.fillRect(cart.w/2 - 10, cart.h/2 - 4, 8, 4);
-    ctx.font = '14px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🛒', 0, 6);
-    ctx.restore();
-  }
-
-  // ---- Pickups ----
-  for (const p of pickups) {
-    if (p.collected) continue;
-    const pulse = 0.85 + Math.sin(stateTimer * 0.08) * 0.15;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.scale(pulse, pulse);
-    ctx.fillStyle = p.type.color;
-    ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = p.type.color;
-    ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.font = '12px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(p.type.emoji, 0, 4);
-    ctx.restore();
-  }
-
-  // ---- Enemies ----
-  for (const e of enemies) {
-    if (e.dead) continue;
-    const bob = Math.sin(stateTimer * 0.1 + e.x) * 2;
-    const flash = e.invincible > 0 && Math.floor(e.invincible / 5) % 2 === 0;
-    if (flash) ctx.globalAlpha = 0.4;
-
-    ctx.save();
-    ctx.translate(e.x, e.y + bob);
-    const s = e.def.size;
-
-    ctx.fillStyle = e.def.color;
-    ctx.fillRect(-s/2, -s/2, s, s);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-s/4-2, -s/4, 5, 5);
-    ctx.fillRect( s/4-3, -s/4, 5, 5);
-    ctx.fillStyle = e.animFrame === 0 ? '#000' : '#111';
-    ctx.fillRect(-s/4, -s/4+1, 3, 3);
-    ctx.fillRect( s/4-2, -s/4+1, 3, 3);
-    ctx.fillStyle = '#000';
-    if (e.isBoss) {
-      ctx.fillRect(-6, s/4-2, 12, 3);
-      ctx.fillRect(-8, s/4-4, 3, 3);
-      ctx.fillRect( 5, s/4-4, 3, 3);
-    } else {
-      ctx.fillRect(-4, s/4-2, 8, 3);
-    }
-    if (e.isBoss) {
-      const bw = 40, bh = 6;
-      ctx.fillStyle = '#333';
-      ctx.fillRect(-bw/2, s/2+4, bw, bh);
-      ctx.fillStyle = '#ff7a00';
-      ctx.fillRect(-bw/2, s/2+4, bw * (e.hp / e.maxHp), bh);
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-      ctx.strokeRect(-bw/2, s/2+4, bw, bh);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 8px Courier New';
-      ctx.textAlign = 'center';
-      ctx.fillText('KEVIN', 0, s/2+17);
-    }
-    // Mini kevin label
-    if (e.isMiniKevin) {
-      ctx.fillStyle = '#ffe066';
-      ctx.font = 'bold 7px Courier New';
-      ctx.textAlign = 'center';
-      ctx.fillText('mini', 0, s/2+9);
-    }
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-
-  // ---- Projectiles ----
-  for (const p of projectiles) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.font = '11px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(p.emoji || '•', 0, 4);
-    ctx.restore();
-  }
-
-  // ---- Particles ----
-  for (const p of particles) {
-    ctx.globalAlpha = p.life / 35;
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
-    ctx.globalAlpha = 1;
-  }
-
-  // ---- Player ----
-  const pFlash = player.invincible > 0 && Math.floor(player.invincible / 6) % 2 === 0;
-  if (!pFlash) {
-    ctx.save();
-    ctx.translate(player.x, player.y);
-    const pw = player.w, ph = player.h;
-    const bob = Math.sin(stateTimer * 0.15) * (1 + player.animFrame);
-    ctx.translate(0, bob);
-
-    // Stun effect
-    if (player.stunned > 0) {
-      ctx.globalAlpha = 0.5 + Math.sin(stateTimer * 0.5) * 0.3;
-      ctx.fillStyle = '#fbbf24';
-      ctx.beginPath(); ctx.arc(0, 0, pw/2 + 8, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    if (player.speedBoost > 0) {
-      const auraPulse = 0.5 + Math.sin(stateTimer * 0.3) * 0.3;
-      ctx.globalAlpha = auraPulse;
-      ctx.fillStyle = '#ffe066';
-      ctx.beginPath(); ctx.arc(0, 0, pw/2 + 6, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.fillStyle = '#16a34a';
-    ctx.fillRect(-pw/2+2, -ph/2+6, pw-4, ph-8);
-    ctx.fillStyle = '#d4b896';
-    ctx.fillRect(-pw/2+4, -ph/2, pw-8, 12);
-    ctx.fillStyle = '#1a1a1a';
-    if (player.facing !== 'up') {
-      ctx.fillRect(-4, -ph/2+3, 3, 3);
-      ctx.fillRect(1, -ph/2+3, 3, 3);
-    }
-    if (player.heldItem) {
-      ctx.font = '14px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(player.heldItem.emoji, 0, -ph/2 - 6);
-    }
-    ctx.restore();
-  }
-
-  ctx.restore(); // end camera
-
-  // ---- On-screen message ----
-  if (gameMessageTimer > 0) {
-    const alpha = Math.min(1, gameMessageTimer / 20);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, canvas.height/2 - 22, canvas.width, 36);
-    ctx.fillStyle = '#ffe066';
-    ctx.font = 'bold 15px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText(gameMessage, canvas.width/2, canvas.height/2 + 6);
-    ctx.restore();
-  }
-
-  drawMiniMap();
+  // Text
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 8px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('EXIT', x, y);
+  ctx.restore();
 }
 
-function drawMiniMap() {
-  const mw = 90, mh = 90;
-  const mx = canvas.width - mw - 6, my = 30;
-  const tw = mw / COLS, th = mh / ROWS;
+// ============================================================
+// DRAW ENEMIES
+// ============================================================
+function drawEnemies() {
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    if (e === boss && !e.active) continue;
+    e.draw(ctx);
+  }
+}
+
+// ============================================================
+// DRAW PROJECTILES
+// ============================================================
+function drawProjectiles() {
+  for (const p of projectiles) {
+    p.draw(ctx);
+  }
+}
+
+// ============================================================
+// DRAW PLAYER (green hoodie pixel art)
+// ============================================================
+function drawPlayer() {
+  const x = player.x;
+  const y = player.y;
+  const hs = player.size / 2;
+
+  ctx.save();
+
+  // Flash damage
+  if (player.damageCooldown > 80) {
+    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(frame * 0.8);
+  }
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + hs + 2, hs, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hoodie body (green)
+  ctx.fillStyle = '#2d8a2d';
+  ctx.fillRect(x - hs, y - hs, player.size, player.size);
+
+  // Hood
+  ctx.fillStyle = '#246824';
+  ctx.beginPath();
+  ctx.arc(x, y - hs + 4, hs * 0.75, Math.PI, 0);
+  ctx.fill();
+
+  // Face
+  ctx.fillStyle = '#f4c882';
+  ctx.fillRect(x - 4, y - 4, 8, 7);
+
+  // Eyes
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(x - 3, y - 2, 2, 2);
+  ctx.fillRect(x + 1, y - 2, 2, 2);
+
+  // Facing indicator (arm)
+  ctx.fillStyle = '#2d8a2d';
+  switch (player.facing) {
+    case 'right':
+      ctx.fillRect(x + hs, y - 2, 5, 4);
+      break;
+    case 'left':
+      ctx.fillRect(x - hs - 5, y - 2, 5, 4);
+      break;
+    case 'up':
+      ctx.fillRect(x - 2, y - hs - 5, 4, 5);
+      break;
+    case 'down':
+      ctx.fillRect(x - 2, y + hs, 4, 5);
+      break;
+  }
+
+  // Stun sparkles
+  if (player.stunTimer > 0) {
+    for (let i = 0; i < 3; i++) {
+      const angle = (frame * 0.2 + i * Math.PI * 2 / 3);
+      const sx = x + Math.cos(angle) * 14;
+      const sy = y - hs - 4 + Math.sin(angle) * 4;
+      ctx.fillStyle = '#ffff00';
+      ctx.fillRect(sx - 2, sy - 2, 4, 4);
+    }
+  }
+
+  ctx.restore();
+}
+
+// ============================================================
+// DRAW CARTS
+// ============================================================
+function drawCarts() {
+  for (const cart of carts) {
+    cart.draw(ctx);
+  }
+}
+
+// ============================================================
+// DRAW MINIMAP
+// ============================================================
+function drawMinimap() {
+  const mW = 80; const mH = 80;
+  const mX = W - mW - 6; const mY = 30;
+  const scaleX = mW / W; const scaleY = mH / H;
+
   ctx.save();
   ctx.globalAlpha = 0.7;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(mx-2, my-2, mw+4, mh+4);
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(mX - 2, mY - 2, mW + 4, mH + 4);
+
+  // Draw tiles
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const ch = MAP[r][c];
-      if (ch === '1') ctx.fillStyle = '#444';
-      else if (ch === 'T') ctx.fillStyle = '#ffe066';
-      else if (kevinAlive && r === 12) ctx.fillStyle = '#ff7a0088';
-      else if (ch === 'H') ctx.fillStyle = '#ef4444';
-      else if (ch === 'B') ctx.fillStyle = '#eab308';
-      else ctx.fillStyle = getZoneFloor(r).floor;
-      ctx.fillRect(mx + c*tw, my + r*th, tw, th);
+      const tile = grid[r][c];
+      const tx = mX + c * (mW / COLS);
+      const ty = mY + r * (mH / ROWS);
+      const tw = mW / COLS + 0.5;
+      const th = mH / ROWS + 0.5;
+      if (tile === 1) ctx.fillStyle = '#555';
+      else if (tile === 'S') ctx.fillStyle = '#ff8800';
+      else ctx.fillStyle = r >= 11 ? '#2a0a3a' : '#0d2a0d';
+      ctx.fillRect(tx, ty, tw, th);
     }
   }
+
+  // Player dot
   ctx.fillStyle = '#00ff88';
-  const px2 = mx + (player.x / (COLS*TILE)) * mw;
-  const py2 = my + (player.y / (ROWS*TILE)) * mh;
-  ctx.beginPath(); ctx.arc(px2, py2, 2.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(mX + player.x * scaleX, mY + player.y * scaleY, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Enemy dots
+  ctx.fillStyle = '#ff4444';
   for (const e of enemies) {
-    if (e.dead) continue;
-    ctx.fillRect(mx + (e.x/(COLS*TILE))*mw - 1.5, my + (e.y/(ROWS*TILE))*mh - 1.5, 3, 3);
+    if (!e.alive) continue;
+    ctx.beginPath();
+    ctx.arc(mX + e.x * scaleX, mY + e.y * scaleY, 1.5, 0, Math.PI * 2);
+    ctx.fill();
   }
-  // Wet floor dots (cyan)
-  ctx.fillStyle = '#fbbf24';
-  for (const wf of wetFloorTiles) {
-    ctx.fillRect(mx + (wf.x/(COLS*TILE))*mw - 1, my + (wf.y/(ROWS*TILE))*mh - 1, 2, 2);
-  }
-  ctx.globalAlpha = 1;
+
   ctx.restore();
 }
 
 // ============================================================
-// SCREENS
+// TITLE SCREEN
 // ============================================================
 function drawTitle() {
-  ctx.fillStyle = '#0a0f0a';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  for (let y=0; y<canvas.height; y+=4) {
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(0,y,canvas.width,2);
+  // Background
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Scanlines
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(0, y, W, 2);
   }
 
+  // Animated particles
+  ctx.fillStyle = '#1a3a1a';
+  for (let i = 0; i < 30; i++) {
+    const x = ((i * 73 + frame * 0.3) % W);
+    const y = ((i * 47 + frame * 0.1) % H);
+    ctx.fillRect(x, y, 2, 2);
+  }
+
+  // Title
+  ctx.save();
+  ctx.shadowColor = '#00ff44';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#00ff44';
+  ctx.font = 'bold 26px "Orbitron", monospace';
   ctx.textAlign = 'center';
-  const pulse = Math.sin(Date.now() * 0.003) * 0.5 + 0.5;
-  ctx.fillStyle = `rgb(${Math.floor(255*pulse)}, 122, 0)`;
-  ctx.font = 'bold 28px Courier New';
-  ctx.fillText('AISLE CHAOS', canvas.width/2, 110);
-  ctx.fillStyle = '#ffe066';
-  ctx.font = 'bold 16px Courier New';
-  ctx.fillText('DUNGEON RUN', canvas.width/2, 134);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('KUSH CHAOS', W/2, 130);
+  ctx.shadowColor = '#ff8800';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ff8800';
+  ctx.font = 'bold 28px "Orbitron", monospace';
+  ctx.fillText('GAUNTLET', W/2, 168);
+  ctx.restore();
 
-  ctx.fillStyle = '#16a34a';
-  ctx.fillRect(canvas.width/2-60, 154, 120, 60);
-  ctx.fillStyle = '#fff';
-  ctx.font = '11px Courier New';
-  ctx.fillText('KUSH CHAOS SHOP', canvas.width/2, 189);
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(canvas.width/2-10, 168, 20, 46);
-  ctx.fillStyle = '#b3e5fc';
-  ctx.fillRect(canvas.width/2-50, 164, 25, 25);
-  ctx.fillRect(canvas.width/2+25, 164, 25, 25);
+  ctx.fillStyle = '#4af0ff';
+  ctx.font = '14px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('★ DISPENSARY DUNGEON CRAWLER ★', W/2, 210);
 
-  ctx.fillStyle = '#aaa';
-  ctx.font = '12px Courier New';
-  ctx.fillText('Navigate the store.', canvas.width/2, 240);
-  ctx.fillText('Pick up products. Throw them.', canvas.width/2, 258);
-  ctx.fillText('Beat Kevin. Get the treasure.', canvas.width/2, 276);
+  // Controls
+  ctx.fillStyle = '#888';
+  ctx.font = '11px "Share Tech Mono", monospace';
+  ctx.fillText('WASD / ARROWS = MOVE', W/2, 260);
+  ctx.fillText('SPACE / Z = THROW PRODUCT', W/2, 278);
+  ctx.fillText('COLLECT 🍃 TO RESTORE HP', W/2, 296);
+  ctx.fillText('COLLECT ★ FOR MORE AMMO', W/2, 314);
+  ctx.fillText('DESTROY SPAWNERS TO STOP ENEMIES', W/2, 332);
+  ctx.fillText('DEFEAT KEVIN BOSS TO WIN!', W/2, 350);
 
-  ctx.fillStyle = '#16a34a';
-  ctx.font = '11px Courier New';
-  ctx.fillText('WASD / ARROWS / D-PAD to move', canvas.width/2, 298);
-  ctx.fillText('SPACE / Z / THROW button to throw', canvas.width/2, 314);
+  ctx.fillStyle = '#666';
+  ctx.font = '10px monospace';
+  ctx.fillText('SHARE ?join=' + roomCode + ' TO ADD A HECKLER', W/2, 378);
 
-  // Room code and join URL on title screen
-  if (ROOM_CODE) {
-    ctx.fillStyle = 'rgba(255,224,102,0.9)';
-    ctx.font = 'bold 13px Courier New';
-    ctx.fillText('HECKLE CODE: ' + ROOM_CODE, canvas.width/2, 346);
-    ctx.fillStyle = '#888';
-    ctx.font = '9px Courier New';
-    const joinURL = window.location.href.split('?')[0] + '?join=' + ROOM_CODE;
-    ctx.fillText(joinURL, canvas.width/2, 360);
+  // Tap to play (flashing)
+  const pulse = Math.sin(frame * 0.07);
+  ctx.fillStyle = `rgba(255, 200, 0, ${0.7 + 0.3 * pulse})`;
+  ctx.font = 'bold 16px "Orbitron", monospace';
+  ctx.fillText('TAP / PRESS ANY KEY TO START', W/2, 430);
+
+  // Decoration
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = '#1a3a1a';
+    ctx.font = '20px sans-serif';
+    ctx.fillText('🌿', 30 + i * 100, 490);
   }
-
-  if (Math.floor(Date.now()/500) % 2 === 0) {
-    ctx.fillStyle = '#ffe066';
-    ctx.font = 'bold 16px Courier New';
-    ctx.fillText('▶  TAP TO START  ◀', canvas.width/2, 400);
-  }
-
-  ctx.fillStyle = '#555';
-  ctx.font = '10px Courier New';
-  ctx.fillText('A KUSH CHAOS BONUS GAME', canvas.width/2, 480);
-
-  // Room code corner display
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = '9px Courier New';
-  ctx.textAlign = 'left';
-  ctx.fillText('ROOM: ' + ROOM_CODE, 8, canvas.height - 8);
 }
 
+// ============================================================
+// DEAD SCREEN
+// ============================================================
 function drawDead() {
-  ctx.fillStyle = 'rgba(0,0,0,0.88)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ef4444';
-  ctx.font = 'bold 32px Courier New';
-  ctx.fillText('YOU GOT FIRED', canvas.width/2, 200);
-  ctx.fillStyle = '#aaa';
-  ctx.font = '14px Courier New';
-  ctx.fillText('Kevin called your manager.', canvas.width/2, 240);
-  ctx.fillStyle = '#ffe066';
-  ctx.font = '13px Courier New';
-  ctx.fillText('Score: ' + player.score, canvas.width/2, 280);
-  if (Math.floor(Date.now()/600) % 2 === 0) {
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px Courier New';
-    ctx.fillText('TAP TO TRY AGAIN', canvas.width/2, 340);
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Scanlines
+  for (let y = 0; y < H; y += 3) {
+    ctx.fillStyle = 'rgba(255,0,0,0.04)';
+    ctx.fillRect(0, y, W, 1);
   }
-}
-
-function drawWin() {
-  ctx.fillStyle = '#0a0a14';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle = '#ffe066';
-  for (let i=0; i<40; i++) {
-    const x = (Math.sin(i*137.5)*0.5+0.5)*canvas.width;
-    const y = (Math.cos(i*97.3)*0.5+0.5)*canvas.height;
-    const r2 = 1+Math.sin(Date.now()*0.003+i)*1;
-    ctx.beginPath(); ctx.arc(x,y,r2,0,Math.PI*2); ctx.fill();
-  }
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffe066';
-  ctx.font = 'bold 24px Courier New';
-  ctx.fillText('YOU BEAT KEVIN!', canvas.width/2, 60);
-  ctx.fillStyle = '#16a34a';
-  ctx.font = '13px Courier New';
-  ctx.fillText('Score: ' + player.score + (player.hp >= 3 ? '  ⭐' : ''), canvas.width/2, 80);
-
-  const cardW = 200, cardH = 260;
-  const cx2 = canvas.width/2, cy2 = canvas.height/2 + 15;
 
   ctx.save();
-  ctx.translate(cx2, cy2);
+  ctx.shadowColor = '#ff2200';
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = '#ff2200';
+  ctx.font = 'bold 36px "Orbitron", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('YOU WERE FIRED', W/2, 200);
+  ctx.restore();
 
-  if (!cardRevealed) {
-    const scaleX = Math.cos(cardFlipAngle);
-    ctx.scale(Math.abs(scaleX) < 0.05 ? 0.05 : scaleX, 1);
-    ctx.fillStyle = '#1a2e1a';
+  ctx.fillStyle = '#888';
+  ctx.font = '14px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`FINAL SCORE: ${score}`, W/2, 250);
+  ctx.fillText(`SURVIVED: ${Math.floor(frame/60)}s`, W/2, 272);
+
+  particles.draw(ctx);
+
+  const pulse = Math.sin(frame * 0.08);
+  ctx.fillStyle = `rgba(255,100,100,${0.7+0.3*pulse})`;
+  ctx.font = 'bold 14px "Orbitron", monospace';
+  ctx.fillText('TAP TO TRY AGAIN', W/2, 370);
+}
+
+// ============================================================
+// WIN SCREEN (card reveal)
+// ============================================================
+function drawWin() {
+  // Purple-green gradient bg
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, '#0a0a2a');
+  grd.addColorStop(1, '#0d1a0d');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  // Celebrate particles
+  particles.update(1/60);
+  particles.draw(ctx);
+
+  ctx.save();
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 28px "Orbitron", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('KEVIN DEFEATED!', W/2, 80);
+  ctx.restore();
+
+  ctx.fillStyle = '#00ff88';
+  ctx.font = '13px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`SCORE: ${score}  |  HP REMAINING: ${player.hp}`, W/2, 112);
+
+  if (!winCard) { winCard = selectCard(); }
+
+  // Card flip animation
+  if (!cardFlipped) {
+    cardFlipT = Math.min(cardFlipT + 0.04, 1.0);
+  }
+
+  const cW = 200; const cH = 280;
+  const cX = W/2 - cW/2; const cY = 140;
+
+  ctx.save();
+  ctx.translate(W/2, cY + cH/2);
+
+  if (cardFlipT < 1.0) {
+    // Flip animation using scaleX
+    const scX = Math.abs(Math.cos(cardFlipT * Math.PI));
+    ctx.scale(scX, 1);
+    // Card back
+    ctx.fillStyle = '#1a1a3a';
+    ctx.strokeStyle = '#4444aa';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(-cardW/2, -cardH/2, cardW, cardH, 10);
+    ctx.roundRect(-cW/2, -cH/2, cW, cH, 12);
     ctx.fill();
-    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#ff7a00';
-    ctx.font = 'bold 18px Courier New';
+    ctx.stroke();
+    ctx.fillStyle = '#3333aa';
+    ctx.font = '60px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('KUSH', 0, -14);
-    ctx.fillText('CHAOS', 0, 8);
-    ctx.fillStyle = '#ffe066';
-    ctx.font = '11px Courier New';
-    ctx.fillText('◆ RARE FIND ◆', 0, 40);
-    if (!cardFlipping) {
-      ctx.fillStyle = Math.floor(Date.now()/500) % 2 === 0 ? '#fff' : '#ffe066';
-      ctx.font = '11px Courier New';
-      ctx.fillText('TAP TO REVEAL', 0, cardH/2 - 20);
-    }
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🎴', 0, 0);
   } else {
-    drawPromoCard(0, 0, cardW, cardH, earnedCardIndex);
-    ctx.fillStyle = '#fff';
-    ctx.font = '11px Courier New';
+    // Card front
+    cardFlipped = true;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.strokeStyle = winCard.color;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = winCard.color;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.roundRect(-cW/2, -cH/2, cW, cH, 12);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = winCard.color;
+    ctx.font = '11px "Orbitron", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('TAP TO PLAY AGAIN', 0, cardH/2 + 22);
+    ctx.textBaseline = 'top';
+    ctx.fillText(winCard.rarity.toUpperCase(), 0, -cH/2 + 14);
+
+    ctx.font = '50px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(winCard.emoji, 0, -cH * 0.15);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px "Orbitron", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(winCard.name, 0, cH * 0.18);
+
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.fillText(winCard.desc, 0, cH * 0.32);
+
+    ctx.fillStyle = winCard.color;
+    ctx.font = '10px monospace';
+    ctx.fillText(`SCORE: ${score}`, 0, cH * 0.42);
   }
   ctx.restore();
 
-  if (cardRevealed) {
-    const card = PROMO_CARDS[earnedCardIndex];
-    const heartsDisplay = '♥'.repeat(Math.max(0,player.hp)) + '♡'.repeat(Math.max(0,player.maxHp - player.hp));
-    const fullHPStar = player.hp >= 3 ? ' ⭐' : '';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#aaa';
-    ctx.font = '11px Courier New';
-    ctx.fillText(
-      'Score: ' + player.score + fullHPStar + '  |  Hearts: ' + heartsDisplay + '  |  ' + card.rarityLabel,
-      canvas.width/2,
-      cy2 + cardH/2 + 40
-    );
+  const pulse = Math.sin(frame * 0.08);
+  ctx.fillStyle = `rgba(255,220,0,${0.7+0.3*pulse})`;
+  ctx.font = '12px "Orbitron", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(cardFlipped ? 'TAP TO PLAY AGAIN' : 'TAP TO REVEAL CARD', W/2, H - 20);
+}
+
+// ============================================================
+// INPUT HANDLERS
+// ============================================================
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space','KeyZ'].includes(e.code)) {
+    e.preventDefault();
+    throwProjectile();
   }
-}
-
-function drawPromoCard(x, y, w, h, cardIndex) {
-  const card = PROMO_CARDS[cardIndex];
-  ctx.fillStyle = '#FFFBEB';
-  ctx.beginPath();
-  ctx.roundRect(x - w/2, y - h/2, w, h, 10);
-  ctx.fill();
-  ctx.strokeStyle = card.border; ctx.lineWidth = 4; ctx.stroke();
-
-  ctx.fillStyle = card.headerColor;
-  ctx.fillRect(x - w/2, y - h/2, w, 36);
-  ctx.fillStyle = card.headerText;
-  ctx.font = 'bold 10px Courier New';
-  ctx.textAlign = 'center';
-  ctx.fillText('✦ ' + card.rarityLabel + ' ✦', x, y - h/2 + 13);
-  ctx.font = 'bold 9px Courier New';
-  ctx.fillText('KUSH CHAOS PROMO CARD', x, y - h/2 + 28);
-
-  ctx.fillStyle = '#1a2e1a';
-  ctx.fillRect(x - w/2 + 10, y - h/2 + 44, w - 20, 80);
-  ctx.font = '36px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(card.emoji, x, y - h/2 + 94);
-
-  ctx.fillStyle = '#1E293B';
-  ctx.font = 'bold 11px Courier New';
-  ctx.textAlign = 'center';
-  ctx.fillText(card.name, x, y - h/2 + 142);
-
-  ctx.strokeStyle = card.border; ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x - w/2 + 10, y - h/2 + 150);
-  ctx.lineTo(x + w/2 - 10, y - h/2 + 150);
-  ctx.stroke();
-
-  ctx.fillStyle = '#475569';
-  ctx.font = 'italic 8px Courier New';
-  ctx.textAlign = 'center';
-  wrapText(ctx, card.flavor, x, y - h/2 + 163, w - 24, 11);
-
-  ctx.fillStyle = '#f8f4e8';
-  ctx.fillRect(x - w/2 + 10, y - h/2 + 180, w - 20, card.rules.length * 13 + 10);
-  ctx.fillStyle = '#1E293B';
-  ctx.font = '8px Courier New';
-  ctx.textAlign = 'center';
-  card.rules.forEach((line, i) => ctx.fillText(line, x, y - h/2 + 191 + i * 13));
-
-  const footerY = y + h/2 - 26;
-  ctx.fillStyle = card.headerColor;
-  ctx.fillRect(x - w/2, footerY, w, 26);
-  ctx.fillStyle = card.headerText;
-  ctx.font = 'bold 9px Courier New';
-  ctx.textAlign = 'center';
-  ctx.fillText('KUSH  ◆  CHAOS', x, footerY + 16);
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '', lineY = y;
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + ' ';
-    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
-      ctx.fillText(line.trim(), x, lineY);
-      line = words[i] + ' ';
-      lineY += lineHeight;
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code)) {
+    e.preventDefault();
+  }
+  // Start game from title
+  if (gameState === 'TITLE') {
+    initAudio();
+    gameState = 'PLAYING';
+  } else if (gameState === 'DEAD') {
+    initAudio();
+    initGame();
+    gameState = 'PLAYING';
+  } else if (gameState === 'WIN') {
+    if (cardFlipped) {
+      initGame();
+      gameState = 'PLAYING';
     } else {
-      line = testLine;
+      cardFlipT = 1.0;
+      cardFlipped = true;
     }
   }
-  ctx.fillText(line.trim(), x, lineY);
+});
+
+document.addEventListener('keyup', e => {
+  keys[e.code] = false;
+});
+
+// Touch start for game states
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  initAudio();
+  if (gameState === 'TITLE') {
+    gameState = 'PLAYING';
+  } else if (gameState === 'DEAD') {
+    initGame();
+    gameState = 'PLAYING';
+  } else if (gameState === 'WIN') {
+    if (cardFlipped) {
+      initGame();
+      gameState = 'PLAYING';
+    } else {
+      cardFlipT = 1.0;
+      cardFlipped = true;
+    }
+  }
+}, { passive: false });
+
+// Mobile d-pad
+function setupMobileControls() {
+  const btnMap = {
+    'btn-up': 'up', 'btn-down': 'down',
+    'btn-left': 'left', 'btn-right': 'right'
+  };
+  for (const [id, dir] of Object.entries(btnMap)) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.addEventListener('touchstart', e => { e.preventDefault(); keys[dir] = true; initAudio(); }, { passive: false });
+    btn.addEventListener('touchend', e => { e.preventDefault(); keys[dir] = false; }, { passive: false });
+    btn.addEventListener('touchcancel', e => { e.preventDefault(); keys[dir] = false; }, { passive: false });
+  }
+
+  const throwBtn = document.getElementById('throw-btn');
+  throwBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    initAudio();
+    throwProjectile();
+  }, { passive: false });
+}
+setupMobileControls();
+
+// ============================================================
+// PEERJS MULTIPLAYER HECKLING
+// ============================================================
+let peer = null;
+let connections = [];
+
+function initPeer() {
+  try {
+    peer = new Peer('kc-dungeon-' + roomCode, {
+      host: 'peerjs.com', port: 443, secure: true,
+      debug: 0
+    });
+    peer.on('connection', conn => {
+      connections.push(conn);
+      conn.on('data', data => handleHeckle(data, conn));
+      conn.on('close', () => {
+        connections = connections.filter(c => c !== conn);
+      });
+    });
+    peer.on('error', () => {}); // Silently handle PeerJS errors
+  } catch(e) {}
+}
+
+function handleHeckle(data, conn) {
+  if (gameState !== 'PLAYING') return;
+  const name = data.name || 'Anonymous';
+  switch(data.type) {
+    case 'wet_floor':
+      player.stunTimer = 60;
+      showHeckleMsg(`${name} dropped a WET FLOOR sign!`);
+      playSFX(200, 0.3, 'sine', 0.3);
+      break;
+    case 'cart':
+      // Slide cart from left or right at player Y
+      const fromRight = Math.random() < 0.5;
+      carts.push(new ShoppingCart(fromRight ? W + 20 : -20, player.y, fromRight ? -4 : 4));
+      showHeckleMsg(`${name} hurled a SHOPPING CART!`);
+      playSFX(300, 0.2, 'square', 0.2);
+      break;
+    case 'mini_kevin':
+      if (enemies.filter(e=>e.alive).length < MAX_ENEMIES) {
+        const mk = new Enemy(
+          Math.random() < 0.5 ? TILE * 1.5 : W - TILE * 1.5,
+          player.y,
+          'mini_kevin'
+        );
+        enemies.push(mk);
+      }
+      showHeckleMsg(`${name} summoned a MINI KEVIN!`);
+      playSFX(150, 0.3, 'sawtooth', 0.25);
+      break;
+    case 'restock':
+      for (const f of foodItems) f.alive = true;
+      for (const a of ammoItems) a.alive = true;
+      showHeckleMsg(`${name} hit RESTOCK — pickups respawned!`);
+      playSFX(600, 0.2, 'sine', 0.2);
+      break;
+  }
 }
 
 // ============================================================
-// GAME LOOP
+// HECKLER PAGE
 // ============================================================
-function loop() {
+function setupHecklerPage() {
+  const params = new URLSearchParams(window.location.search);
+  const joinCode = params.get('join');
+  if (!joinCode) return false;
+
+  document.getElementById('game-page').style.display = 'none';
+  document.getElementById('heckler-page').style.display = 'flex';
+
+  const status = document.getElementById('heckler-status');
+  status.textContent = 'Connecting to host...';
+
+  let hostConn = null;
+
+  function getHecklerName() {
+    return document.getElementById('heckler-name-input').value.trim() || 'Anonymous';
+  }
+
+  try {
+    const hecklerPeer = new Peer(undefined, {
+      host: 'peerjs.com', port: 443, secure: true, debug: 0
+    });
+    hecklerPeer.on('open', () => {
+      hostConn = hecklerPeer.connect('kc-dungeon-' + joinCode.toUpperCase());
+      hostConn.on('open', () => {
+        status.textContent = `✅ Connected to room ${joinCode.toUpperCase()}!`;
+        status.style.color = '#00ff88';
+      });
+      hostConn.on('error', () => {
+        status.textContent = '❌ Connection failed';
+        status.style.color = '#ff4444';
+      });
+      hostConn.on('close', () => {
+        status.textContent = '❌ Disconnected';
+        status.style.color = '#ff4444';
+      });
+    });
+    hecklerPeer.on('error', () => {
+      status.textContent = '❌ Could not connect';
+      status.style.color = '#ff4444';
+    });
+  } catch(e) {
+    status.textContent = '❌ PeerJS unavailable';
+    status.style.color = '#ff8800';
+  }
+
+  function sendHeckle(type) {
+    if (!hostConn || !hostConn.open) {
+      status.textContent = '❌ Not connected';
+      return;
+    }
+    hostConn.send({ type, name: getHecklerName() });
+  }
+
+  function setupBtn(btnId, barId, type) {
+    const btn = document.getElementById(btnId);
+    const bar = document.getElementById(barId);
+    const cooldown = parseInt(btn.dataset.cooldown || 8000);
+
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      sendHeckle(type);
+      btn.disabled = true;
+      bar.style.width = '100%';
+      const start = performance.now();
+      const tick = () => {
+        const elapsed = performance.now() - start;
+        const pct = Math.max(0, 100 - (elapsed / cooldown) * 100);
+        bar.style.width = pct + '%';
+        if (elapsed < cooldown) requestAnimationFrame(tick);
+        else { btn.disabled = false; bar.style.width = '0%'; }
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  setupBtn('btn-wet-floor', 'cd-wet-floor', 'wet_floor');
+  setupBtn('btn-cart', 'cd-cart', 'cart');
+  setupBtn('btn-mini-kevin', 'cd-mini-kevin', 'mini_kevin');
+  setupBtn('btn-restock', 'cd-restock', 'restock');
+
+  return true;
+}
+
+// ============================================================
+// MAIN GAME LOOP
+// ============================================================
+function gameLoop(ts) {
   update();
-  draw();
-  requestAnimationFrame(loop);
+  render();
+  requestAnimationFrame(gameLoop);
 }
 
-// Boot
-initPeer();
-updateRoomCodeUI();
-loop();
+// ============================================================
+// BOOT
+// ============================================================
+function boot() {
+  const isHeckler = setupHecklerPage();
+  if (!isHeckler) {
+    initGame();
+    initPeer();
+    requestAnimationFrame(gameLoop);
+  }
+}
 
-} // end initGamePage()
+// Wait for fonts to load before starting
+document.fonts.ready.then(() => {
+  boot();
+});
 </script>
 </body>
 </html>
