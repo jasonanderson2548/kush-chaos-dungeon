@@ -486,35 +486,49 @@ function getZoneFloor(row) {
 }
 
 const RAW_MAP = [
-  "111111111111111111",
-  "1E0000010000100001",
-  "100200010200100001",
-  "111010111010101111",
-  "100000000H00000001",
-  "102010302010301001",
-  "100010000010000B01",
-  "111111010111010111",
-  "100000000000H00001",
-  "102000302000300201",
-  "100000B00000000001",
-  "111010111010101111",
-  "100000000000H00001",
-  "100200020020200001",
-  "100010000010000001",
-  "111100000000001111",
-  "10000K000000K00001",
-  "111100000T000001111",
+  "111111111111111111",  // 0  outer wall
+  "1E0000000000000001",  // 1  entrance — wide open
+  "100000000000000001",  // 2  produce zone (color only, no shelf wall)
+  "100011110011110001",  // 3  shelf row: 4-wide islands, 3-wide aisles between
+  "100000000000000001",  // 4  open deli aisle
+  "100000000000000001",  // 5  open
+  "100011110011110001",  // 6  shelf row: same pattern
+  "100000000000000001",  // 7  open freezer aisle
+  "100000000000000001",  // 8  open
+  "100011110011110001",  // 9  shelf row: same pattern
+  "100000000000000001",  // 10 open dry goods
+  "100000000000000001",  // 11 open — approaching boss
+  "111110000000011111",  // 12 boss barrier — huge gap cols 5-12
+  "10000K000000K00001",  // 13 Kevin boss room
+  "100000000000000001",  // 14 Kevin room open
+  "100000000T000000 1",  // 15 treasure (accessible after Kevin dies)
+  "100000000000000001",  // 16 open
+  "111111111111111111",  // 17 bottom wall
 ];
 
 (function fixMapPositions() {
   function setChar(rowStr, col, ch) {
     return rowStr.slice(0, col) + ch + rowStr.slice(col + 1);
   }
-  RAW_MAP[4]  = setChar(RAW_MAP[4],  8,  'H');
-  RAW_MAP[8]  = setChar(RAW_MAP[8],  4,  'H');
-  RAW_MAP[12] = setChar(RAW_MAP[12], 10, 'H');
-  RAW_MAP[6]  = setChar(RAW_MAP[6],  12, 'B');
-  RAW_MAP[10] = setChar(RAW_MAP[10], 6,  'B');
+  // Health packs on open floor tiles
+  RAW_MAP[4]  = setChar(RAW_MAP[4],  9,  'H');
+  RAW_MAP[8]  = setChar(RAW_MAP[8],  9,  'H');
+  RAW_MAP[11] = setChar(RAW_MAP[11], 9,  'H');
+  // Speed boosts
+  RAW_MAP[5]  = setChar(RAW_MAP[5],  14, 'B');
+  RAW_MAP[10] = setChar(RAW_MAP[10], 3,  'B');
+  // Pickups on open floor
+  RAW_MAP[2]  = setChar(RAW_MAP[2],  3,  '2');
+  RAW_MAP[2]  = setChar(RAW_MAP[2],  9,  '2');
+  RAW_MAP[2]  = setChar(RAW_MAP[2],  14, '2');
+  RAW_MAP[4]  = setChar(RAW_MAP[4],  3,  '2');
+  RAW_MAP[7]  = setChar(RAW_MAP[7],  3,  '2');
+  RAW_MAP[7]  = setChar(RAW_MAP[7],  9,  '2');
+  RAW_MAP[10] = setChar(RAW_MAP[10], 14, '2');
+  // Enemies on open floor rows
+  RAW_MAP[5]  = setChar(RAW_MAP[5],  6,  '3');
+  RAW_MAP[8]  = setChar(RAW_MAP[8],  12, '3');
+  RAW_MAP[11] = setChar(RAW_MAP[11], 6,  '3');
 })();
 
 function parseMap(raw) {
@@ -795,7 +809,7 @@ let particles = [];
 let bossIntroShown = false;
 let kevinAlive = true;
 let kevinHp = 5;
-let doorOpen = false;
+let // doorOpen removed — Kevin guards by presence
 let gameMessage = '';
 let gameMessageTimer = 0;
 
@@ -829,7 +843,7 @@ function initGame() {
   bossIntroShown = false;
   kevinAlive = true;
   kevinHp = 5;
-  doorOpen = false;
+  // doorOpen removed — Kevin guards by presence
   cardRevealed = false;
   cardFlipping = false;
   cardFlipAngle = 0;
@@ -931,7 +945,7 @@ function isWall(px, py) {
   const ch = tileAt(px, py);
   if (ch === '1') return true;
   if (ch === 'H' || ch === 'B') return false;
-  if (!doorOpen && Math.floor(py / TILE) === 17) return true;
+  // No door lock — Kevin guards by presence
   return false;
 }
 
@@ -1094,9 +1108,15 @@ function update() {
     for (let c = 0; c < COLS; c++) {
       if (MAP[r][c] === 'T') {
         const tx = c * TILE + TILE/2, ty = r * TILE + TILE/2;
-        if (Math.hypot(player.x - tx, player.y - ty) < TILE * 1.0 && doorOpen) {
+        if (Math.hypot(player.x - tx, player.y - ty) < TILE * 1.0) {
+              if (!kevinAlive) {
           earnedCardIndex = getEarnedCardIndex();
-          gameState = GAME_STATES.WIN;
+              gameState = GAME_STATES.WIN;
+              } else {
+                showMessage('⚔️ Defeat Kevin first!');
+              }
+            }
+          }
         }
       }
     }
@@ -1167,7 +1187,6 @@ function update() {
           player.score += (e.isBoss ? 50 : (e.isMiniKevin ? 5 : 10));
           if (e.isBoss) {
             kevinAlive = false;
-            doorOpen = true;
             showMessage('🎉 KEVIN IS DOWN! GRAB THE TREASURE!');
           }
         }
@@ -1298,9 +1317,17 @@ function draw() {
           ctx.textAlign = 'left';
           ctx.fillText(zone.label, tx + 2, ty + 11);
         }
+        // Guide arrows on row 14 — point down toward boss
+        if (r === 14 && ch !== '1') {
+          ctx.fillStyle = 'rgba(255,122,0,0.4)';
+          ctx.font = 'bold 13px Courier New';
+          ctx.textAlign = 'center';
+          ctx.fillText('▼', tx + TILE/2, ty + TILE/2 + 5);
+        
+        }
       }
 
-      if (r === 17 && ch !== '1' && ch !== 'T' && !doorOpen) {
+      if (r === 12 && ch !== '1' && !kevinAlive) { ctx.fillStyle = '#4ade8044'; ctx.fillRect(tx,ty,TILE,TILE); } else if (r === 12 && ch !== '1' && kevinAlive) {
         ctx.fillStyle = '#444';
         ctx.fillRect(tx, ty, TILE, TILE);
         ctx.fillStyle = '#ff7a00';
@@ -1522,7 +1549,7 @@ function drawMiniMap() {
       const ch = MAP[r][c];
       if (ch === '1') ctx.fillStyle = '#444';
       else if (ch === 'T') ctx.fillStyle = '#ffe066';
-      else if (!doorOpen && r === 17) ctx.fillStyle = '#ff7a00';
+      else if (kevinAlive && r === 12) ctx.fillStyle = '#ff7a0088';
       else if (ch === 'H') ctx.fillStyle = '#ef4444';
       else if (ch === 'B') ctx.fillStyle = '#eab308';
       else ctx.fillStyle = getZoneFloor(r).floor;
