@@ -501,9 +501,9 @@ const RAW_MAP = [
   "100000000000H00001",
   "100200020020200001",
   "100010000010000001",
-  "111111111111111111",
+  "111100000000001111",
   "10000K000000K00001",
-  "111111111T11111111",
+  "111100000T000001111",
 ];
 
 (function fixMapPositions() {
@@ -931,7 +931,7 @@ function isWall(px, py) {
   const ch = tileAt(px, py);
   if (ch === '1') return true;
   if (ch === 'H' || ch === 'B') return false;
-  if (!doorOpen && Math.floor(py / TILE) === 15) return true;
+  if (!doorOpen && Math.floor(py / TILE) === 17) return true;
   return false;
 }
 
@@ -1300,7 +1300,7 @@ function draw() {
         }
       }
 
-      if (r === 15 && ch !== '1' && !doorOpen) {
+      if (r === 17 && ch !== '1' && ch !== 'T' && !doorOpen) {
         ctx.fillStyle = '#444';
         ctx.fillRect(tx, ty, TILE, TILE);
         ctx.fillStyle = '#ff7a00';
@@ -1522,7 +1522,7 @@ function drawMiniMap() {
       const ch = MAP[r][c];
       if (ch === '1') ctx.fillStyle = '#444';
       else if (ch === 'T') ctx.fillStyle = '#ffe066';
-      else if (!doorOpen && r === 15) ctx.fillStyle = '#ff7a00';
+      else if (!doorOpen && r === 17) ctx.fillStyle = '#ff7a00';
       else if (ch === 'H') ctx.fillStyle = '#ef4444';
       else if (ch === 'B') ctx.fillStyle = '#eab308';
       else ctx.fillStyle = getZoneFloor(r).floor;
