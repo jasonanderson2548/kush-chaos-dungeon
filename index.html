@@ -139,29 +139,91 @@ let spawnTimer, drainTimer;
 let score, startTime, floatMsgs;
 let camY;
 let flickerAlpha = 0, flickerDir = 1;
+let duckOn = false;  // toggled by joystick tap
 
 // Dark overlay for level 3
 let darkOverlay = 0;
 
-// ── Input ─────────────────────────────────────────────────────────────
-const joy  = { active:false, ox:0, oy:0, dx:0, dy:0, id:-1 };
-const btns = {
-  throw:  { x:300, y:H-65, r:34, held:false, id:-1 },
-  hotbox: { x:W/2, y:H-55, r:30, held:false, id:-1 },
-  duck:   { x:60,  y:H-65, r:30, held:false, id:-1 },
+// ── Web Audio ─────────────────────────────────────────────────────────
+const AC = (()=>{ try { return new (window.AudioContext||window.webkitAudioContext)(); } catch(e){return null;} })();
+function resumeAC(){ if(AC && AC.state==='suspended') AC.resume(); }
+function tone(freq, type, dur, vol, delay=0, detune=0) {
+  if (!AC) return;
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.value=freq; o.detune.value=detune;
+  g.gain.setValueAtTime(0,AC.currentTime+delay);
+  g.gain.linearRampToValueAtTime(vol,AC.currentTime+delay+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+delay+dur);
+  o.connect(g); g.connect(AC.destination);
+  o.start(AC.currentTime+delay); o.stop(AC.currentTime+delay+dur+0.05);
+}
+function noise(dur, vol, delay=0) {
+  if (!AC) return;
+  const buf=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=AC.createBufferSource(), g=AC.createGain(), f=AC.createBiquadFilter();
+  src.buffer=buf; f.type='bandpass'; f.frequency.value=200;
+  g.gain.setValueAtTime(vol,AC.currentTime+delay);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+delay+dur);
+  src.connect(f); f.connect(g); g.connect(AC.destination);
+  src.start(AC.currentTime+delay);
+}
+const sfx = {
+  shoot() { tone(520,'square',0.07,0.18); tone(320,'square',0.05,0.1,0.05); },
+  hit()   { noise(0.12,0.25); tone(120,'sawtooth',0.1,0.2); },
+  key()   { [523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.2,0.22,i*0.07)); },
+  treasure(){ [392,523,659,784,1047].forEach((f,i)=>tone(f,'triangle',0.4,0.3,i*0.06)); },
+  duck()  { tone(300,'sine',0.08,0.15); tone(200,'sine',0.08,0.12,0.06); },
+  unduck(){ tone(200,'sine',0.06,0.1); tone(300,'sine',0.06,0.12,0.05); },
+  levelWin(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,'triangle',0.5,0.28,i*0.09)); },
+  gameover(){ [440,370,311,261,220].forEach((f,i)=>tone(f,'sawtooth',0.35,0.22,i*0.12)); },
+  spawn() { tone(880,'square',0.06,0.12); tone(440,'square',0.08,0.1,0.05); },
+  step()  { noise(0.06,0.06); },
+  win()   { [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,'sine',0.6,0.3,i*0.08));
+            tone(523,'triangle',1.2,0.2,0.6); },
 };
-const JZONE_MAXY = H - 120;  // joystick only activates above button row
+// ── Background music ──────────────────────────────────────────────────
+let bgmHandle = null;
+const MELODY = [523,523,659,523,784,740,523, 523,523,659,523,880,784,0];
+const BASS   = [131,131,131,131,131,131,131,131,165,165,165,165,165,165,165,165];
+let bgmStep = 0, bgmBassStep = 0;
+function bgmTick() {
+  if (!AC || phase!=='playing') return;
+  const note = MELODY[bgmStep % MELODY.length];
+  if (note>0) tone(note,'triangle',0.18,0.08);
+  tone(BASS[bgmBassStep % BASS.length],'sine',0.28,0.07);
+  bgmStep++; bgmBassStep++;
+  bgmHandle = setTimeout(bgmTick, 280);
+}
+function bgmStart(){ if(!bgmHandle){ bgmStep=0; bgmBassStep=0; bgmTick(); } }
+function bgmStop() { if(bgmHandle){ clearTimeout(bgmHandle); bgmHandle=null; } }
+
+// ── Input ─────────────────────────────────────────────────────────────
+const JOY_X=85, JOY_Y=H-100, JOY_R=55;  // fixed joystick home
+const joy  = { active:false, ox:JOY_X, oy:JOY_Y, dx:0, dy:0, id:-1, touchStartX:0, touchStartY:0, touchStartT:0 };
+const btns = {
+  throw:  { x:W-75, y:H-75, r:38, held:false, id:-1 },
+  hotbox: { x:W-75, y:H-165, r:32, held:false, id:-1 },
+};
 
 function onTouchStart(e) {
   e.preventDefault();
+  resumeAC();
+  // Advance end-screens on any tap
+  if (phase==='gameover')                          { initLevel(lvlIdx); return; }
+  if (phase==='win')                               { if(lvlIdx<MAPS.length-1) initLevel(lvlIdx+1); else initLevel(0); return; }
+  if (phase==='levelwin')                          { initLevel(lvlIdx+1); return; }
   for (const t of e.changedTouches) {
     const {x, y} = toGame(t.clientX, t.clientY);
     let hitBtn = false;
     for (const [k, b] of Object.entries(btns)) {
       if (dist2(x,y,b.x,b.y) < b.r*b.r) { b.held=true; b.id=t.identifier; hitBtn=true; break; }
     }
-    if (!hitBtn && !joy.active && x < W/2 && y < JZONE_MAXY) {
-      joy.active=true; joy.ox=x; joy.oy=y; joy.dx=0; joy.dy=0; joy.id=t.identifier;
+    // Joystick zone: anywhere on left 55% of screen
+    if (!hitBtn && !joy.active && x < W*0.55) {
+      joy.active=true; joy.ox=JOY_X; joy.oy=JOY_Y;
+      joy.dx=0; joy.dy=0; joy.id=t.identifier;
+      joy.touchStartX=x; joy.touchStartY=y; joy.touchStartT=Date.now();
     }
   }
 }
@@ -173,14 +235,23 @@ function onTouchMove(e) {
       joy.dx = x - joy.ox;
       joy.dy = y - joy.oy;
       const m = Math.sqrt(joy.dx*joy.dx+joy.dy*joy.dy);
-      if (m > 55) { joy.dx=joy.dx/m*55; joy.dy=joy.dy/m*55; }
+      if (m > JOY_R) { joy.dx=joy.dx/m*JOY_R; joy.dy=joy.dy/m*JOY_R; }
     }
   }
 }
 function onTouchEnd(e) {
   e.preventDefault();
   for (const t of e.changedTouches) {
-    if (t.identifier === joy.id) { joy.active=false; joy.dx=0; joy.dy=0; joy.id=-1; }
+    if (t.identifier === joy.id) {
+      // Tap detection: small movement + quick release = toggle duck
+      const moved = dist(joy.touchStartX,joy.touchStartY, joy.touchStartX+joy.dx, joy.touchStartY+joy.dy);
+      const elapsed = Date.now()-joy.touchStartT;
+      if (Math.abs(joy.dx)<14 && Math.abs(joy.dy)<14 && elapsed<300) {
+        duckOn = !duckOn;
+        if(duckOn) sfx.duck(); else sfx.unduck();
+      }
+      joy.active=false; joy.dx=0; joy.dy=0; joy.id=-1;
+    }
     for (const b of Object.values(btns)) { if (t.identifier===b.id) { b.held=false; b.id=-1; } }
   }
 }
@@ -195,11 +266,16 @@ document.addEventListener('keydown', e => {
   keys[e.key] = true;
   if (e.key===' '||e.key==='f') throwProjectile();
   if (e.key==='q') activateHotbox();
-  if (e.key==='Shift') btns.duck.held = true;
+  if (e.key==='Shift' && !duckOn) { duckOn=true; sfx.duck(); }
+  if (e.key==='Enter'||e.key==='r') {
+    if(phase==='gameover') initLevel(lvlIdx);
+    else if(phase==='win') { if(lvlIdx<MAPS.length-1) initLevel(lvlIdx+1); else initLevel(0); }
+    else if(phase==='levelwin') initLevel(lvlIdx+1);
+  }
 });
 document.addEventListener('keyup', e => {
   keys[e.key] = false;
-  if (e.key==='Shift') btns.duck.held = false;
+  if (e.key==='Shift' && duckOn) { duckOn=false; sfx.unduck(); }
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -436,11 +512,6 @@ function drawHUD() {
   ctx.fillStyle='#a78bfa'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
   ctx.fillText(`LVL ${lvlIdx+1}  ${score}pts`, W/2, 22);
 
-  // HOTBOX cooldown ring
-  const hbFrac = Math.min(1, player.hotboxCd/22000);
-  ctx.strokeStyle = hbFrac>0?'#9333ea':'#7CFC00'; ctx.lineWidth=4;
-  ctx.beginPath(); ctx.arc(btns.hotbox.x, btns.hotbox.y, btns.hotbox.r+4, -Math.PI/2, -Math.PI/2+Math.PI*2*(1-hbFrac)); ctx.stroke();
-
   // Needs food warning
   if (player.hp<=3 && Math.floor(t/500)%2===0) {
     ctx.fillStyle='#FF0000'; ctx.font='bold 14px monospace'; ctx.textAlign='center';
@@ -450,40 +521,49 @@ function drawHUD() {
 
 // ── Buttons ───────────────────────────────────────────────────────────
 function drawButtons() {
-  // THROW
+  ctx.globalAlpha=1;
+  // THROW (right side, big)
   const tb = btns.throw;
   ctx.beginPath(); ctx.arc(tb.x, tb.y, tb.r, 0, Math.PI*2);
-  ctx.fillStyle = tb.held ? 'rgba(245,158,11,0.9)':'rgba(0,0,0,0.5)';
-  ctx.fill(); ctx.strokeStyle='#F59E0B'; ctx.lineWidth=2.5; ctx.stroke();
-  ctx.fillStyle='#fff'; ctx.font='bold 10px monospace'; ctx.textAlign='center';
+  ctx.fillStyle = tb.held ? 'rgba(245,158,11,0.95)':'rgba(0,0,0,0.55)';
+  ctx.fill(); ctx.strokeStyle='#F59E0B'; ctx.lineWidth=3; ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
   ctx.fillText('THROW',tb.x,tb.y+4);
 
-  // HOTBOX
+  // HOTBOX (above throw)
   const hb = btns.hotbox;
+  const hbFrac = Math.min(1, player.hotboxCd/22000);
   ctx.beginPath(); ctx.arc(hb.x, hb.y, hb.r, 0, Math.PI*2);
-  ctx.fillStyle = player.hotboxActive?'rgba(147,51,234,0.9)':hb.held?'rgba(147,51,234,0.7)':'rgba(0,0,0,0.5)';
-  ctx.fill(); ctx.strokeStyle='#9333ea'; ctx.lineWidth=2.5; ctx.stroke();
-  ctx.fillStyle='#fff'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
-  ctx.fillText('HOTBOX',hb.x,hb.y+3);
-
-  // DUCK
-  const db = btns.duck;
-  ctx.beginPath(); ctx.arc(db.x, db.y, db.r, 0, Math.PI*2);
-  ctx.fillStyle = db.held?'rgba(99,102,241,0.9)':'rgba(0,0,0,0.5)';
-  ctx.fill(); ctx.strokeStyle='#6366f1'; ctx.lineWidth=2.5; ctx.stroke();
-  ctx.fillStyle='#fff'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
-  ctx.fillText('DUCK',db.x,db.y+4);
-
-  // Joystick
-  if (joy.active) {
-    ctx.globalAlpha=0.35;
-    ctx.beginPath(); ctx.arc(joy.ox, joy.oy, 50, 0, Math.PI*2);
-    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-    ctx.globalAlpha=0.6;
-    ctx.beginPath(); ctx.arc(joy.ox+joy.dx, joy.oy+joy.dy, 24, 0, Math.PI*2);
-    ctx.fillStyle='#fff'; ctx.fill();
-    ctx.globalAlpha=1;
+  ctx.fillStyle = player.hotboxActive?'rgba(147,51,234,0.95)':hb.held?'rgba(147,51,234,0.7)':'rgba(0,0,0,0.55)';
+  ctx.fill(); ctx.strokeStyle='#9333ea'; ctx.lineWidth=3; ctx.stroke();
+  // Cooldown arc
+  if (hbFrac>0) {
+    ctx.strokeStyle='rgba(147,51,234,0.5)'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.arc(hb.x,hb.y,hb.r+5,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-hbFrac)); ctx.stroke();
   }
+  ctx.fillStyle='#fff'; ctx.font='bold 10px monospace'; ctx.textAlign='center';
+  ctx.fillText('HOTBOX',hb.x,hb.y+4);
+
+  // Joystick — always visible base
+  const isDucking = duckOn || keys['Shift'];
+  const joyCol = isDucking ? '#6366f1' : '#22c55e';
+  // Outer ring (base)
+  ctx.globalAlpha = joy.active ? 0.55 : 0.3;
+  ctx.beginPath(); ctx.arc(JOY_X, JOY_Y, JOY_R, 0, Math.PI*2);
+  ctx.strokeStyle = joyCol; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle = isDucking ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.08)';
+  ctx.fill();
+  // Duck label inside base
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle=joyCol; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+  ctx.fillText(isDucking?'DUCK▼':'TAP=DUCK', JOY_X, JOY_Y+JOY_R+12);
+  // Knob
+  ctx.globalAlpha = joy.active ? 0.85 : 0.4;
+  const kx = JOY_X + joy.dx, ky = JOY_Y + joy.dy;
+  ctx.beginPath(); ctx.arc(kx, ky, 22, 0, Math.PI*2);
+  ctx.fillStyle = joyCol; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.globalAlpha=1;
 }
 
 // ── Floating messages ─────────────────────────────────────────────────
@@ -642,7 +722,9 @@ function initLevel(idx) {
   // Initial pickups
   spawnPickup('food'); spawnPickup('ammo');
 
+  duckOn = false;
   phase='playing';
+  bgmStop(); bgmStart();
   levelStartTimer=2400;
   levelStartAlpha=1;
 }
@@ -678,6 +760,7 @@ function throwProjectile() {
   player.ammo--;
   const dx=player.facing.x||0, dy=player.facing.y||-1;
   const mag=Math.sqrt(dx*dx+dy*dy)||1;
+  sfx.shoot();
   projectiles.push({x:player.x,y:player.y,vx:dx/mag*280,vy:dy/mag*280,life:800});
   // Emergency ammo
   if (player.ammo===0 && !pickups.some(p=>p.type==='ammo')) spawnPickup('ammo');
@@ -707,9 +790,9 @@ function update(ts) {
   btns.hotbox._wasHeld = btns.hotbox.held;
 
   // ── Player move ──────────────────────────────────────────────────
-  const isDucking = btns.duck.held || keys['Shift'];
+  const isDucking = duckOn || keys['Shift'];
   let mx=0, my=0;
-  if (joy.active) { mx=joy.dx/55; my=joy.dy/55; }
+  if (joy.active) { mx=joy.dx/JOY_R; my=joy.dy/JOY_R; }
   else {
     if (keys['ArrowLeft']||keys['a']) mx=-1;
     if (keys['ArrowRight']||keys['d']) mx=1;
@@ -733,7 +816,7 @@ function update(ts) {
   // ── Key pickup ───────────────────────────────────────────────────
   if (!hasKey && keyPos) {
     if (dist(player.x,player.y,keyPos.wx,keyPos.wy)<22) {
-      hasKey=true;
+      hasKey=true; sfx.key();
       map[keyPos.row][keyPos.col]=TF; // remove from map
       addFloat('🔑 KEY FOUND!', player.x, player.y, '#FFD700');
       score+=50;
@@ -743,7 +826,7 @@ function update(ts) {
   // ── Treasure pickup ──────────────────────────────────────────────
   if (!hasTreasure && treasurePos) {
     if (dist(player.x,player.y,treasurePos.wx,treasurePos.wy)<22) {
-      hasTreasure=true;
+      hasTreasure=true; sfx.treasure();
       winReason='treasure'; score+=200;
       phase='win'; return;
     }
@@ -755,8 +838,8 @@ function update(ts) {
     if (dExit < 30) {
       if (hasKey) {
         winReason='key'; score+=150;
-        if (lvlIdx < MAPS.length-1) { phase='levelwin'; }
-        else { phase='win'; }
+        if (lvlIdx < MAPS.length-1) { phase='levelwin'; bgmStop(); sfx.levelWin(); }
+        else { phase='win'; bgmStop(); sfx.win(); }
         return;
       } else {
         // hint message (throttled)
@@ -772,14 +855,14 @@ function update(ts) {
   drainTimer -= dt;
   if (drainTimer<=0) {
     drainTimer=cfg.drainMs;
-    player.hp--;
+    player.hp--; sfx.hit();
     addFloat('-1 HP', player.x, player.y, '#ef4444');
-    if (player.hp<=0) { phase='gameover'; return; }
+    if (player.hp<=0) { phase='gameover'; bgmStop(); sfx.gameover(); return; }
   }
 
   // ── Enemy spawn ─────────────────────────────────────────────────
   spawnTimer-=dt;
-  if (spawnTimer<=0) { spawnTimer=cfg.spawnMs; spawnEnemy(); }
+  if (spawnTimer<=0) { spawnTimer=cfg.spawnMs; sfx.spawn(); spawnEnemy(); }
 
   // ── Hotbox ──────────────────────────────────────────────────────
   if (player.hotboxActive) {
@@ -841,7 +924,7 @@ function update(ts) {
         if (!e._dmgCd||now-e._dmgCd>800) {
           player.hp--; e._dmgCd=now;
           addFloat('-1 HP',player.x,player.y,'#ef4444');
-          if (player.hp<=0){phase='gameover';return;}
+          if (player.hp<=0){phase='gameover'; bgmStop(); sfx.gameover(); return;}
         }
       }
       // Lose sight when ducking behind shelf
@@ -922,9 +1005,15 @@ function draw(ts) {
     for (const e of enemies) drawEnemy(e);
 
     // Player
-    const isDucking = btns.duck.held || keys['Shift'];
-    const leafSz = isDucking ? player.r*1.3 : player.r*1.85;
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+    const isDucking = duckOn || keys['Shift'];
+    const leafSz = isDucking ? player.r*1.6 : player.r*2.4;
     const leafCol = player.hotboxActive ? '#a855f7' : '#22c55e';
+    // Glow ring so player is always findable
+    ctx.shadowColor = leafCol; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(player.x, player.y-camY, player.r, 0, Math.PI*2);
+    ctx.fillStyle = isDucking ? 'rgba(99,102,241,0.35)' : 'rgba(34,197,94,0.2)';
+    ctx.fill(); ctx.shadowBlur=0;
     drawPotLeaf(player.x, player.y-camY, leafSz, leafCol, player.faceAng);
     // Duck visual indicator
     if (isDucking) {
@@ -964,15 +1053,8 @@ function draw(ts) {
   requestAnimationFrame(draw);
 }
 
-// ── Tap to advance on end screens ────────────────────────────────────
-canvas.addEventListener('click', () => {
-  if (phase==='gameover')  { initLevel(lvlIdx); }
-  if (phase==='win') {
-    if (lvlIdx<MAPS.length-1) initLevel(lvlIdx+1);
-    else initLevel(0);
-  }
-  if (phase==='levelwin')  { initLevel(lvlIdx+1); }
-});
+// ── Boot music ───────────────────────────────────────────────────────
+// bgm starts on first touch (inside onTouchStart → resumeAC, then initLevel sets phase=playing)
 
 // ── Boot ─────────────────────────────────────────────────────────────
 initLevel(0);
