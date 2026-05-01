@@ -654,6 +654,8 @@ function drawLevelComplete() {
   ctx.fillText('Score: '+score, W/2, H/2-20);
   ctx.fillStyle='#a78bfa'; ctx.font='bold 14px monospace';
   ctx.fillText('TAP for Level '+(lvlIdx+2), W/2, H/2+20);
+  ctx.fillStyle='#6ee7b7'; ctx.font='12px monospace';
+  ctx.fillText('then drag LEFT side of screen to move', W/2, H/2+48);
 }
 
 // ── Game over ─────────────────────────────────────────────────────────
@@ -665,6 +667,8 @@ function drawGameOver() {
   ctx.fillStyle='#fff'; ctx.font='14px monospace';
   ctx.fillText('Score: '+score, W/2, H/2-20);
   ctx.fillText('TAP to try again', W/2, H/2+20);
+  ctx.fillStyle='#6ee7b7'; ctx.font='12px monospace';
+  ctx.fillText('then drag LEFT side to move', W/2, H/2+48);
 }
 
 // ── Init level ────────────────────────────────────────────────────────
@@ -704,8 +708,10 @@ function initLevel(idx) {
 
   phase='playing';
   bgmStop(); bgmStart();
-  levelStartTimer=800;
-  levelStartAlpha=1;
+  levelStartTimer=0;  // no black overlay — float message instead
+  // Brief non-blocking level announce (doesn't cover joystick)
+  addFloat('LEVEL '+(idx+1)+' — '+cfg.title, W/2, H/3, '#a78bfa');
+  addFloat('DRAG LEFT SIDE TO MOVE', W/2, H/3+22, '#6ee7b7');
 }
 
 // ── Spawn helpers ─────────────────────────────────────────────────────
