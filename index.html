@@ -15,7 +15,7 @@ canvas{display:block;image-rendering:pixelated;max-width:100vw;max-height:100vh;
 <script>
 // ══════════════════════════════════════════════════════════════════════
 //  AISLE RUN  —  Phase 1
-//  Tile map · Keys · Treasure · Exit · Duck · 3 Levels
+//  Tile map · Keys · Treasure · Exit · 3 Levels
 // ══════════════════════════════════════════════════════════════════════
 
 // ── Canvas / DPR ──────────────────────────────────────────────────────
@@ -87,13 +87,13 @@ const MAPS = [
   [1,0,1,1,4,1,1,0,1], // 2 treasure col 4
   [1,0,1,1,0,1,1,0,1], // 3
   [1,0,0,0,0,0,0,0,1], // 4 connector
-  [1,1,1,0,1,0,1,1,1], // 5 cross-barrier: only cols 3 & 5 open
+  [1,1,1,1,0,1,1,1,1], // 5 cross-barrier: CENTER only (col 4)
   [1,0,0,0,0,0,0,0,1], // 6 connector
   [1,0,1,1,0,1,1,0,1], // 7
   [1,0,1,1,0,1,1,3,1], // 8 KEY col 7
   [1,0,0,0,0,0,0,0,1], // 9 connector
   [1,0,1,1,0,1,1,0,1], // 10
-  [1,1,1,0,1,0,1,1,1], // 11 cross-barrier cols 3 & 5
+  [1,0,1,1,1,1,1,0,1], // 11 cross-barrier: OUTER aisles (cols 1 & 7)
   [1,0,0,0,0,0,0,0,1], // 12 connector
   [1,0,1,1,0,1,1,0,1], // 13
   [1,0,1,1,0,1,1,0,1], // 14
@@ -139,7 +139,6 @@ let spawnTimer, drainTimer;
 let score, startTime, floatMsgs;
 let camY;
 let flickerAlpha = 0, flickerDir = 1;
-let duckOn = false;  // toggled by joystick tap
 
 // Dark overlay for level 3
 let darkOverlay = 0;
@@ -173,8 +172,6 @@ const sfx = {
   hit()   { noise(0.12,0.25); tone(120,'sawtooth',0.1,0.2); },
   key()   { [523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.2,0.22,i*0.07)); },
   treasure(){ [392,523,659,784,1047].forEach((f,i)=>tone(f,'triangle',0.4,0.3,i*0.06)); },
-  duck()  { tone(300,'sine',0.08,0.15); tone(200,'sine',0.08,0.12,0.06); },
-  unduck(){ tone(200,'sine',0.06,0.1); tone(300,'sine',0.06,0.12,0.05); },
   levelWin(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,'triangle',0.5,0.28,i*0.09)); },
   gameover(){ [440,370,311,261,220].forEach((f,i)=>tone(f,'sawtooth',0.35,0.22,i*0.12)); },
   spawn() { tone(880,'square',0.06,0.12); tone(440,'square',0.08,0.1,0.05); },
@@ -200,7 +197,7 @@ function bgmStop() { if(bgmHandle){ clearTimeout(bgmHandle); bgmHandle=null; } }
 
 // ── Input ─────────────────────────────────────────────────────────────
 const JOY_X=85, JOY_Y=H-100, JOY_R=55;  // fixed joystick home
-const joy  = { active:false, ox:JOY_X, oy:JOY_Y, dx:0, dy:0, id:-1, touchStartX:0, touchStartY:0, touchStartT:0 };
+const joy  = { active:false, ox:JOY_X, oy:JOY_Y, dx:0, dy:0, id:-1 };
 const btns = {
   throw:  { x:W-75, y:H-75, r:38, held:false, id:-1 },
   hotbox: { x:W-75, y:H-165, r:32, held:false, id:-1 },
@@ -223,7 +220,6 @@ function onTouchStart(e) {
     if (!hitBtn && !joy.active && x < W*0.55) {
       joy.active=true; joy.ox=JOY_X; joy.oy=JOY_Y;
       joy.dx=0; joy.dy=0; joy.id=t.identifier;
-      joy.touchStartX=x; joy.touchStartY=y; joy.touchStartT=Date.now();
     }
   }
 }
@@ -243,13 +239,6 @@ function onTouchEnd(e) {
   e.preventDefault();
   for (const t of e.changedTouches) {
     if (t.identifier === joy.id) {
-      // Tap detection: small movement + quick release = toggle duck
-      const moved = dist(joy.touchStartX,joy.touchStartY, joy.touchStartX+joy.dx, joy.touchStartY+joy.dy);
-      const elapsed = Date.now()-joy.touchStartT;
-      if (Math.abs(joy.dx)<14 && Math.abs(joy.dy)<14 && elapsed<300) {
-        duckOn = !duckOn;
-        if(duckOn) sfx.duck(); else sfx.unduck();
-      }
       joy.active=false; joy.dx=0; joy.dy=0; joy.id=-1;
     }
     for (const b of Object.values(btns)) { if (t.identifier===b.id) { b.held=false; b.id=-1; } }
@@ -266,7 +255,6 @@ document.addEventListener('keydown', e => {
   keys[e.key] = true;
   if (e.key===' '||e.key==='f') throwProjectile();
   if (e.key==='q') activateHotbox();
-  if (e.key==='Shift' && !duckOn) { duckOn=true; sfx.duck(); }
   if (e.key==='Enter'||e.key==='r') {
     if(phase==='gameover') initLevel(lvlIdx);
     else if(phase==='win') { if(lvlIdx<MAPS.length-1) initLevel(lvlIdx+1); else initLevel(0); }
@@ -275,7 +263,6 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => {
   keys[e.key] = false;
-  if (e.key==='Shift' && duckOn) { duckOn=false; sfx.unduck(); }
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -545,23 +532,16 @@ function drawButtons() {
   ctx.fillText('HOTBOX',hb.x,hb.y+4);
 
   // Joystick — always visible base
-  const isDucking = duckOn || keys['Shift'];
-  const joyCol = isDucking ? '#6366f1' : '#22c55e';
   // Outer ring (base)
   ctx.globalAlpha = joy.active ? 0.55 : 0.3;
   ctx.beginPath(); ctx.arc(JOY_X, JOY_Y, JOY_R, 0, Math.PI*2);
-  ctx.strokeStyle = joyCol; ctx.lineWidth=2.5; ctx.stroke();
-  ctx.fillStyle = isDucking ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.08)';
-  ctx.fill();
-  // Duck label inside base
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle=joyCol; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-  ctx.fillText(isDucking?'DUCK▼':'TAP=DUCK', JOY_X, JOY_Y+JOY_R+12);
+  ctx.strokeStyle = '#22c55e'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(34,197,94,0.08)'; ctx.fill();
   // Knob
   ctx.globalAlpha = joy.active ? 0.85 : 0.4;
   const kx = JOY_X + joy.dx, ky = JOY_Y + joy.dy;
   ctx.beginPath(); ctx.arc(kx, ky, 22, 0, Math.PI*2);
-  ctx.fillStyle = joyCol; ctx.fill();
+  ctx.fillStyle = '#22c55e'; ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.stroke();
   ctx.globalAlpha=1;
 }
@@ -634,7 +614,6 @@ function drawLevelStart(dt) {
   ctx.fillText('Find the KEY + reach EXIT', W/2, H/2+20);
   ctx.fillText('or find the TREASURE', W/2, H/2+38);
   ctx.fillStyle='#fbbf24'; ctx.font='11px monospace';
-  ctx.fillText('DUCK to hide from enemies', W/2, H/2+62);
   ctx.globalAlpha=1;
 }
 
@@ -722,7 +701,6 @@ function initLevel(idx) {
   // Initial pickups
   spawnPickup('food'); spawnPickup('ammo');
 
-  duckOn = false;
   phase='playing';
   bgmStop(); bgmStart();
   levelStartTimer=2400;
@@ -790,7 +768,6 @@ function update(ts) {
   btns.hotbox._wasHeld = btns.hotbox.held;
 
   // ── Player move ──────────────────────────────────────────────────
-  const isDucking = duckOn || keys['Shift'];
   let mx=0, my=0;
   if (joy.active) { mx=joy.dx/JOY_R; my=joy.dy/JOY_R; }
   else {
@@ -805,7 +782,7 @@ function update(ts) {
     player.facing={x:mx,y:my};
     player.faceAng=Math.atan2(my,mx)+Math.PI/2;
   }
-  const spd = isDucking ? player.speed*0.45 : player.speed;
+  const spd = player.speed;
   moveWithWall(player, mx*spd*dt/1000, my*spd*dt/1000);
 
   // Camera follows player (vertical only)
@@ -914,7 +891,7 @@ function update(ts) {
       const pm=Math.sqrt(pdx*pdx+pdy*pdy)||1;
       moveWithWall(e, pdx/pm*e.speed*0.55*dt/1000, pdy/pm*e.speed*0.55*dt/1000);
       // Detect player
-      if (d<SIGHT && los && !(isDucking && d>SNIFF)) e.state='chase';
+      if (d<SIGHT && los) e.state='chase';
 
     } else if (e.state==='chase') {
       const dx=player.x-e.x, dy=player.y-e.y, dm=d||1;
@@ -927,8 +904,7 @@ function update(ts) {
           if (player.hp<=0){phase='gameover'; bgmStop(); sfx.gameover(); return;}
         }
       }
-      // Lose sight when ducking behind shelf
-      if (isDucking && !los && d>SNIFF) {
+      if (!los && d>SNIFF && e.state==='chase') {
         e.state='lost'; e.lostTimer=3000;
         addFloat('?',e.x,e.y,'#f97316');
       } else if (!los && d>SIGHT*0.7) {
@@ -1006,21 +982,12 @@ function draw(ts) {
 
     // Player
     ctx.globalAlpha=1; ctx.shadowBlur=0;
-    const isDucking = duckOn || keys['Shift'];
-    const leafSz = isDucking ? player.r*1.6 : player.r*2.4;
     const leafCol = player.hotboxActive ? '#a855f7' : '#22c55e';
     // Glow ring so player is always findable
     ctx.shadowColor = leafCol; ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.arc(player.x, player.y-camY, player.r, 0, Math.PI*2);
-    ctx.fillStyle = isDucking ? 'rgba(99,102,241,0.35)' : 'rgba(34,197,94,0.2)';
-    ctx.fill(); ctx.shadowBlur=0;
-    drawPotLeaf(player.x, player.y-camY, leafSz, leafCol, player.faceAng);
-    // Duck visual indicator
-    if (isDucking) {
-      ctx.strokeStyle='#6366f1'; ctx.lineWidth=2; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.arc(player.x, player.y-camY, player.r*2.2, 0, Math.PI*2); ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    ctx.fillStyle = 'rgba(34,197,94,0.2)'; ctx.fill(); ctx.shadowBlur=0;
+    drawPotLeaf(player.x, player.y-camY, player.r*2.4, leafCol, player.faceAng);
     // Hotbox aura
     if (player.hotboxActive) {
       ctx.strokeStyle='rgba(168,85,247,0.5)'; ctx.lineWidth=2;
