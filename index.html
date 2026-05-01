@@ -206,18 +206,19 @@ const btns = {
 function onTouchStart(e) {
   e.preventDefault();
   resumeAC();
-  // Advance end-screens on any tap
-  if (phase==='gameover')                          { initLevel(lvlIdx); return; }
-  if (phase==='win')                               { if(lvlIdx<MAPS.length-1) initLevel(lvlIdx+1); else initLevel(0); return; }
-  if (phase==='levelwin')                          { initLevel(lvlIdx+1); return; }
+  // Advance end-screens on any tap — then fall through to activate joystick with the same touch
+  if (phase==='gameover')        { initLevel(lvlIdx); }
+  else if (phase==='win')        { if(lvlIdx<MAPS.length-1) initLevel(lvlIdx+1); else initLevel(0); }
+  else if (phase==='levelwin')   { initLevel(lvlIdx+1); }
+  if (phase !== 'playing') return;  // safety: only process joystick when game is live
   for (const t of e.changedTouches) {
     const {x, y} = toGame(t.clientX, t.clientY);
     let hitBtn = false;
     for (const [k, b] of Object.entries(btns)) {
       if (dist2(x,y,b.x,b.y) < b.r*b.r) { b.held=true; b.id=t.identifier; hitBtn=true; break; }
     }
-    // Joystick zone: anywhere on left 55% of screen
-    if (!hitBtn && !joy.active && x < W*0.55) {
+    // Joystick zone: left 55% normally; anywhere during level-start flash so tap-to-advance = tap-to-move
+    if (!hitBtn && !joy.active && (x < W*0.55 || levelStartTimer > 0)) {
       joy.active=true; joy.ox=JOY_X; joy.oy=JOY_Y;
       joy.dx=0; joy.dy=0; joy.id=t.identifier;
     }
@@ -703,7 +704,7 @@ function initLevel(idx) {
 
   phase='playing';
   bgmStop(); bgmStart();
-  levelStartTimer=2400;
+  levelStartTimer=800;
   levelStartAlpha=1;
 }
 
