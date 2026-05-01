@@ -806,7 +806,7 @@ function update(ts) {
     if (dist(player.x,player.y,treasurePos.wx,treasurePos.wy)<22) {
       hasTreasure=true; sfx.treasure();
       winReason='treasure'; score+=200;
-      phase='win'; return;
+      phase='win'; requestAnimationFrame(update); return;
     }
   }
 
@@ -818,7 +818,7 @@ function update(ts) {
         winReason='key'; score+=150;
         if (lvlIdx < MAPS.length-1) { phase='levelwin'; bgmStop(); sfx.levelWin(); }
         else { phase='win'; bgmStop(); sfx.win(); }
-        return;
+        requestAnimationFrame(update); return;
       } else {
         // hint message (throttled)
         if (!player._exitHintTimer||now-player._exitHintTimer>3000) {
@@ -835,7 +835,7 @@ function update(ts) {
     drainTimer=cfg.drainMs;
     player.hp--; sfx.hit();
     addFloat('-1 HP', player.x, player.y, '#ef4444');
-    if (player.hp<=0) { phase='gameover'; bgmStop(); sfx.gameover(); return; }
+    if (player.hp<=0) { phase='gameover'; bgmStop(); sfx.gameover(); requestAnimationFrame(update); return; }
   }
 
   // ── Enemy spawn ─────────────────────────────────────────────────
@@ -902,7 +902,7 @@ function update(ts) {
         if (!e._dmgCd||now-e._dmgCd>800) {
           player.hp--; e._dmgCd=now;
           addFloat('-1 HP',player.x,player.y,'#ef4444');
-          if (player.hp<=0){phase='gameover'; bgmStop(); sfx.gameover(); return;}
+          if (player.hp<=0){phase='gameover'; bgmStop(); sfx.gameover(); requestAnimationFrame(update); return;}
         }
       }
       if (!los && d>SNIFF && e.state==='chase') {
